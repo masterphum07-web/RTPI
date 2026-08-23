@@ -28,6 +28,7 @@
   <script src="js/config.js?v=5"></script>
   <script src="js/site-images.js?v=1"></script>
   <script src="js/data.js?v=6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -68,6 +69,7 @@
       <div class="flex flex-wrap gap-2 mb-5">
         <button @click="tab = 'dash'" class="rt-chip" :class="tab === 'dash' ? 'rt-active' : ''">📊 ภาพรวม</button>
         <button @click="tab = 'upload'" class="rt-chip" :class="tab === 'upload' ? 'rt-active' : ''">📤 อัปโหลดรูป</button>
+        <button @click="tab = 'ocr'" class="rt-chip" :class="tab === 'ocr' ? 'rt-active' : ''">🔎 รูป → ตาราง</button>
         <button @click="tab = 'manage'" class="rt-chip" :class="tab === 'manage' ? 'rt-active' : ''">🗂 จัดการรูปทั้งหมด</button>
         <button @click="tab = 'rows'" class="rt-chip" :class="tab === 'rows' ? 'rt-active' : ''">📋 เพิ่มข้อมูลตาราง</button>
         <button @click="tab = 'settings'" class="rt-chip" :class="tab === 'settings' ? 'rt-active' : ''">⚙️ ตั้งค่าเว็บ</button>
@@ -300,6 +302,20 @@
         </div>
       </section>
 
+      <section x-show="tab === 'ocr'" x-cloak class="rt-card p-6">
+        <h2 class="rt-serif font-bold rt-navy-text text-lg mb-1">🔎 แปลงรูปตารางเป็นข้อมูล</h2>
+        <p class="text-sm rt-muted-text mb-4">ใช้ OCR ฟรีในเบราว์เซอร์ — ตรวจแก้ข้อความก่อนบันทึกทุกครั้ง</p>
+        <div class="grid gap-3 md:grid-cols-2 mb-3">
+          <input type="file" accept="image/*" @change="ocrFile = $event.target.files[0]" class="rt-input !py-2">
+          <select x-model="ocrTarget" class="rt-select"><option value="Exams">ตารางสอบ</option><option value="Schedule">ตารางสอน</option></select>
+        </div>
+        <button @click="runOcr()" class="rt-btn rt-btn-primary" :disabled="busy || !ocrFile">🔎 อ่านรูปด้วย OCR</button>
+        <span class="text-sm rt-muted-text ml-2" x-text="ocrProgress"></span>
+        <textarea x-model="ocrText" rows="10" class="rt-input mt-4 font-mono !text-[13px]" placeholder="ผล OCR จะขึ้นที่นี่ แล้วตรวจแก้ให้แต่ละแถวคั่นด้วย | ก่อนกดบันทึก"></textarea>
+        <p class="text-xs rt-muted-text mt-1">ระบบจะแปลงช่องว่างหลายช่อง/แท็บเป็น | อัตโนมัติ แต่ภาพตารางภาษาไทยอาจต้องแก้บางช่อง</p>
+        <button @click="submitOcr()" class="rt-btn rt-btn-gold mt-3" :disabled="busy || !ocrRows.length">✅ ตรวจแล้ว บันทึก <span x-text="ocrRows.length"></span> แถว</button>
+      </section>
+
       <!-- ── เพิ่มข้อมูลตาราง ── -->
       <section x-show="tab === 'settings'" x-cloak class="rt-card p-6">
         <h2 class="rt-serif font-bold rt-navy-text text-lg mb-1">⚙️ ตั้งค่าเว็บไซต์</h2>
@@ -390,6 +406,10 @@
         rowsText: '',
         settings: {},
         news: { title: '', category: 'ข่าวสาร', body: '', author: '', file: null },
+        ocrFile: null,
+        ocrText: '',
+        ocrProgress: '',
+        ocrTarget: 'Exams',
 
         checkResult(r) {
           // รุ่นเก่าของ Apps Script ไม่มี doPost — คำตอบที่ได้จะเป็นข้อมูล doGet แทน
@@ -570,6 +590,29 @@
             .map(l => l.trim())
             .filter(Boolean)
             .map(line => line.includes('\t') ? line.split('\t') : line.split('|').map(s => s.trim()));
+        },
+        get ocrRows() {
+          return this.ocrText.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+            const cells = line.includes('|') ? line.split('|') : line.split(/\t|\s{2,}/);
+            return cells.map(s => s.trim());
+          }).filter(row => row.length > 1);
+        },
+        async runOcr() {
+          if (!this.ocrFile || !window.Tesseract) return;
+          this.busy = true; this.ocrProgress = 'กำลังอ่านรูป…';
+          try {
+            const result = await Tesseract.recognize(this.ocrFile, 'tha+eng', { logger: m => { if (m.status === 'recognizing text') this.ocrProgress = 'กำลังอ่านรูป ' + Math.round((m.progress || 0) * 100) + '%'; } });
+            this.ocrText = result.data.text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => line.split(/\t|\s{2,}/).map(s => s.trim()).join(' | ')).join('\n');
+            this.ocrProgress = 'อ่านเสร็จแล้ว — กรุณาตรวจแก้';
+          } catch (e) { this.ocrProgress = ''; this.notify(false, '❌ อ่านรูปไม่สำเร็จ: ' + e.message); }
+          this.busy = false;
+        },
+        async submitOcr() {
+          this.busy = true;
+          const r = await this.api('addRows', { sheet: this.ocrTarget, rows: this.ocrRows });
+          this.busy = false;
+          this.notify(!!r.ok, r.ok ? `✅ เพิ่ม ${r.added} แถวแล้ว` : '❌ ' + (r.error || 'บันทึกไม่สำเร็จ'));
+          if (r.ok) { this.ocrText = ''; this.ocrProgress = ''; }
         },
         async submitRows() {
           this.busy = true;
