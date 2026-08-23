@@ -181,7 +181,18 @@
       </section>
 
       <!-- ── อัปโหลดรูป ── -->
-      <section x-show="tab === 'upload'" x-cloak class="rt-card p-6">
+      <section x-show="tab === 'upload'" x-cloak class="space-y-5">
+        <div x-show="!scriptOk" class="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 p-4 text-sm leading-relaxed">
+          <p class="font-semibold mb-1">⚠️ ระบบอัปโหลดอัตโนมัติยังไม่พร้อม (Apps Script ยังไม่ได้ติดตั้ง/อัปเดต)</p>
+          <p>จนกว่าจะติดตั้งเสร็จ อัปโหลดรูปแบบเมนวลได้เลย:</p>
+          <ol class="list-decimal ml-5 mt-1 space-y-0.5">
+            <li>ใน Google Sheets ของสาขา → สร้างแท็บใหม่ชื่อ <b>Images</b></li>
+            <li>พิมพ์หัวตารางแถว 1: <b>หมวดหมู่ | ปีการศึกษา | ภาคเรียน | ชื่อรูป/คำอธิบาย | ลิงก์รูปภาพ | วันที่เผยแพร่ | ผู้อัพโหลด</b></li>
+            <li>อัปโหลดรูปขึ้น Google Drive → คลิกขวา <b>แชร์ → ทุกคนที่มีลิงก์ (ผู้ดู)</b> → ก็อปลิงก์ไปใส่คอลัมน์ "ลิงก์รูปภาพ"</li>
+            <li>หมวดหมู่ใส่ <b>ตารางสอบ</b> หรือ <b>ตารางสอน</b> — รูปจะขึ้นเว็บเองภายใน 1 นาที</li>
+          </ol>
+        </div>
+        <div class="rt-card p-6">
         <h2 class="rt-serif font-bold rt-navy-text text-lg mb-4">📤 อัปโหลดรูปตารางสอบ / ตารางสอน / อื่น ๆ</h2>
         <div class="grid gap-5 md:grid-cols-2">
           <div>
@@ -234,6 +245,7 @@
               รูปจะถูกเก็บใน Google Drive (โฟลเดอร์ RTPI-Uploads) และแสดงบนเว็บทันทีที่หน้าตารางสอบ/ตารางสอน
             </p>
           </div>
+        </div>
         </div>
       </section>
 
