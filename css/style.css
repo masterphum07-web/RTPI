@@ -1,0 +1,44 @@
+/* ── RTPI: สไตล์เสริมนอกเหนือจาก Tailwind ── */
+
+[x-cloak] { display: none !important; }
+
+body { font-family: 'Sarabun', sans-serif; }
+
+/* แถบประกาศวิ่ง */
+@keyframes rt-marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.rt-marquee {
+  display: inline-block;
+  animation: rt-marquee 25s linear infinite;
+}
+.rt-marquee:hover { animation-play-state: paused; }
+
+/* ตารางข้อมูล */
+.rt-table { width: 100%; border-collapse: collapse; }
+.rt-table th {
+  background: #16325c; color: #fff; font-weight: 600;
+  padding: .65rem .8rem; text-align: left; white-space: nowrap;
+  font-size: .875rem;
+}
+.rt-table td {
+  padding: .65rem .8rem; border-bottom: 1px solid #e2e8f0;
+  vertical-align: top; font-size: .925rem;
+}
+.rt-table tbody tr:nth-child(even) { background: #f8fafc; }
+.rt-table tbody tr:hover { background: #eef3fb; }
+
+/* ป้ายวันในตารางสอน */
+.rt-day-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.4rem; height: 2.4rem; border-radius: .6rem;
+  font-weight: 700; color: #fff; background: #16325c;
+}
+
+/* การพิมพ์ตาราง */
+@media print {
+  #rt-header, #rt-footer, .rt-noprint { display: none !important; }
+  body { background: #fff; }
+  .rt-table th { background: #e2e8f0 !important; color: #000 !important; }
+}
