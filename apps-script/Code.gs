@@ -104,6 +104,7 @@ const RT_SHEET_DEFS = [
     ],
     samples: [
       ['siteName', 'สาขาวิชารังสีเทคนิค'],
+      ['logoUrl', ''],
       ['siteFullName', 'สาขาวิชาเทคนิคการแพทย์รังสี วิทยาลัยเทคโนโลยีทางการแพทย์และสาธารณสุข กาญจนาภิเษก (วทก.)'],
       ['currentYear', '2569'],
       ['currentTerm', 'ภาคเรียนที่ 1'],
@@ -366,6 +367,21 @@ function doPost(e) {
         sheet.appendRow([String(body.id || ('P' + Date.now())), String(body.title || ''), String(body.category || 'ข่าวสาร'), String(body.body || ''), url, String(body.link || ''), String(body.author || 'แอดมิน'), new Date(), String(body.pinned || 'FALSE')]);
         clearCache();
         return jsonOut({ ok: true, url: url, fileId: file.getId() });
+      }
+
+      case 'uploadSiteLogo': {
+        const folder = getUploadFolder_();
+        const blob = Utilities.newBlob(Utilities.base64Decode(String(body.base64 || '')), String(body.mimeType || 'image/png'), String(body.fileName || ('logo-' + Date.now() + '.png')));
+        const file = folder.createFile(blob);
+        try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (shareErr) {}
+        const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w400';
+        const sheet = ss.getSheetByName('Config');
+        const rows = sheet.getDataRange().getValues();
+        let found = false;
+        for (let i = 1; i < rows.length; i++) if (String(rows[i][0]) === 'logoUrl') { sheet.getRange(i + 1, 2).setValue(url); found = true; break; }
+        if (!found) sheet.appendRow(['logoUrl', url]);
+        clearCache();
+        return jsonOut({ ok: true, url: url });
       }
 
       default:

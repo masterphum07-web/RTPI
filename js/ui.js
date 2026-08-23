@@ -14,6 +14,7 @@ const RT_NAV = [
 function rtSiteName(cfg) {
   return (cfg && cfg.siteName) || 'สาขาวิชารังสีเทคนิค';
 }
+function rtSiteLogo(cfg) { return (cfg && cfg.logoUrl) || 'icons/logo-dept.png'; }
 
 function rtToggleNav() {
   document.getElementById('rt-mobile-nav').classList.toggle('hidden');
@@ -51,7 +52,7 @@ function rtRenderHeader(active) {
         <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <a href="index.html" class="flex items-center gap-3 min-w-0 group">
             <span class="flex items-center bg-white rounded-xl p-1 shrink-0 group-hover:scale-105 transition">
-              <img src="icons/logo-dept.png" class="h-10 w-10 object-contain" alt="โลโก้สาขา">
+              <img src="${rtSiteLogo(window.__rtCfg)}" class="h-10 w-10 object-contain" alt="โลโก้สาขา">
             </span>
             <span class="min-w-0">
               <span class="block rt-serif font-semibold text-base sm:text-xl leading-tight truncate">${rtSiteName(window.__rtCfg)}</span>
@@ -98,7 +99,7 @@ function rtRenderFooter() {
         <div>
           <div class="flex items-center gap-2.5 mb-3">
             <span class="flex items-center bg-white rounded-lg p-1">
-              <img src="icons/logo-dept.png" class="h-9 w-9 object-contain" alt="โลโก้สาขา">
+              <img src="${rtSiteLogo(window.__rtCfg)}" class="h-9 w-9 object-contain" alt="โลโก้สาขา">
             </span>
             <span class="rt-serif font-semibold text-white text-base leading-tight">${rtSiteName(window.__rtCfg)}</span>
           </div>

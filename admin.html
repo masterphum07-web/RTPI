@@ -312,6 +312,7 @@
           <input x-model="settings.lineUrl" class="rt-input" placeholder="ลิงก์ LINE">
           <input x-model="settings.facebookUrl" class="rt-input" placeholder="ลิงก์ Facebook">
           <textarea x-model="settings.announcement" rows="2" class="rt-input md:col-span-2" placeholder="ข้อความประกาศวิ่ง"></textarea>
+          <label class="text-sm rt-muted-text md:col-span-2">โลโก้ใหม่ <input type="file" accept="image/*" @change="settings.logoFile = $event.target.files[0]" class="rt-input !py-2 mt-1"></label>
         </div>
         <button @click="saveSettings()" class="rt-btn rt-btn-primary mt-4" :disabled="busy">💾 บันทึกการตั้งค่า</button>
         <hr class="my-6 border-[var(--rt-border)]">
@@ -583,7 +584,16 @@
         },
         async saveSettings() {
           this.busy = true;
-          const r = await this.api('saveConfig', { values: this.settings });
+          let r = { ok: true };
+          if (this.settings.logoFile) {
+            const base64 = await new Promise((resolve, reject) => { const fr = new FileReader(); fr.onload = () => resolve(String(fr.result).split(',')[1]); fr.onerror = reject; fr.readAsDataURL(this.settings.logoFile); });
+            r = await this.api('uploadSiteLogo', { base64, mimeType: this.settings.logoFile.type || 'image/png', fileName: this.settings.logoFile.name });
+          }
+          if (r.ok) {
+            const values = Object.assign({}, this.settings);
+            delete values.logoFile;
+            r = await this.api('saveConfig', { values });
+          }
           this.busy = false;
           this.notify(!!r.ok, r.ok ? '✅ บันทึกการตั้งค่าแล้ว — รีเฟรชหน้าเว็บเพื่อดูผล' : '❌ ' + (r.error || 'บันทึกไม่สำเร็จ'));
         },
