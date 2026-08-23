@@ -103,6 +103,14 @@ const RTData = (() => {
     return gvizRows(json, MAPS[tabName] || {});
   }
 
+  /* รวมรูปที่ฝังในเว็บโดยตรง (js/site-images.js) เข้ากับรูปจากชีต */
+  function mergeSiteImages(d) {
+    if (typeof RT_SITE_IMAGES !== 'undefined' && Array.isArray(RT_SITE_IMAGES) && RT_SITE_IMAGES.length) {
+      d.images = d.images.concat(RT_SITE_IMAGES);
+    }
+    return d;
+  }
+
   async function fetchFromGviz(sheetId) {
     const tabs = ['Schedule', 'Exams', 'Posts', 'Images', 'Config'];
     const settled = await Promise.all(tabs.map(t => gvizTab(sheetId, t).catch(() => [])));
@@ -113,7 +121,7 @@ const RTData = (() => {
     d.posts = settled[2];
     d.images = settled[3];
     settled[4].forEach(r => { if (r.key) d.config[String(r.key)] = String(r.value ?? ''); });
-    return d;
+    return mergeSiteImages(d);
   }
 
   async function fetchFromScript(url) {
@@ -121,7 +129,7 @@ const RTData = (() => {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = Object.assign(EMPTY(), await res.json());
     if (!Array.isArray(d.images)) d.images = Array.isArray(d.examImages) ? d.examImages : [];
-    return d;
+    return mergeSiteImages(d);
   }
 
   async function fetchLive() {
