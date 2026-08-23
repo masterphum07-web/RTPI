@@ -22,10 +22,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link rel="stylesheet" href="css/style.css?v=3">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=2"></script>
-  <script src="js/data.js?v=2"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/data.js?v=3"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -138,7 +138,7 @@
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=2"></script>
+  <script src="js/ui.js?v=3"></script>
   <script>
     rtRenderHeader('search');
     rtRenderFooter();
@@ -168,7 +168,7 @@
           if (this.type !== 'all' && this.type !== 'exams' || !this.query) return [];
           const q = this.query;
           return this.exams.filter(e => (e.subject + ' ' + e.code + ' ' + e.room + ' ' + e.type + ' ' + e.group).toLowerCase().includes(q))
-            .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+            .sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 12);
         },
         get scheduleResults() {
           if (this.type !== 'all' && this.type !== 'schedule' || !this.query) return [];

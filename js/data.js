@@ -80,6 +80,15 @@ const RTData = (() => {
     return out;
   }
 
+  /* ลายเซ็นคอลัมน์ที่ต้องมีจริง — กันกรณี gviz ส่งแท็บแรกกลับมาเมื่อขอแท็บที่ไม่มีอยู่ */
+  const SIGNATURES = {
+    Schedule: ['เวลาเริ่ม'],
+    Exams: ['วันที่สอบ'],
+    Posts: ['หัวข้อ'],
+    ExamImages: ['ลิงก์รูปภาพ'],
+    Config: ['ค่า'],
+  };
+
   async function gvizTab(sheetId, tabName) {
     // headers=1 บังคับให้แถวแรกเป็นหัวตารางเสมอ (ไม่ให้ gviz เดาเองแล้วรวมหลายแถวเป็น header)
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tabName)}`;
@@ -87,6 +96,9 @@ const RTData = (() => {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    const labels = ((json.table && json.table.cols) || []).map(c => (c.label || '').trim());
+    const sig = SIGNATURES[tabName] || [];
+    if (!sig.every(s => labels.includes(s))) return []; // ไม่ใช่แท็บที่ขอ (gviz ส่งแท็บแรกมาแทน)
     return gvizRows(json, MAPS[tabName] || {});
   }
 
