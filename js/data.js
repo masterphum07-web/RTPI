@@ -25,12 +25,12 @@ const RTData = (() => {
     Schedule: {
       'ปีการศึกษา': 'year', 'ภาคเรียน': 'term', 'กลุ่มเรียน': 'group', 'วัน': 'day',
       'เวลาเริ่ม': 'timeStart', 'เวลาสิ้นสุด': 'timeEnd', 'รหัสวิชา': 'code',
-      'รายวิชา': 'subject', 'ห้อง': 'room', 'อาจารย์': 'teacher',
+      'รายวิชา': 'subject', 'ห้อง': 'room', 'อาจารย์': 'teacher', 'ชั้นปี': 'level',
     },
     Exams: {
       'ปีการศึกษา': 'year', 'ภาคเรียน': 'term', 'ประเภทการสอบ': 'type', 'รหัสวิชา': 'code',
       'รายวิชา': 'subject', 'กลุ่มสอบ': 'group', 'วันที่สอบ': 'date', 'เวลา': 'time',
-      'ห้องสอบ': 'room', 'หมายเหตุ': 'note',
+      'ห้องสอบ': 'room', 'หมายเหตุ': 'note', 'ชั้นปี': 'level',
     },
     Posts: {
       'รหัสโพสต์': 'id', 'หัวข้อ': 'title', 'หมวดหมู่': 'category', 'เนื้อหา': 'body',
@@ -194,4 +194,12 @@ function rtDirectImage(u) {
   const m = String(u).match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([\w-]{15,})/);
   if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
   return String(u);
+}
+
+/* หาชั้นปี (ปี 1-4) ของแถวข้อมูล — ใช้คอลัมน์ "ชั้นปี" ถ้ามี
+ * ถ้าไม่มีให้เดาจากเลขปีในรหัสกลุ่ม เช่น R1/1 → ปี 1, รังสี 3/2 → ปี 3 */
+function rtLevelOf(row) {
+  if (row && row.level) return String(row.level);
+  const m = String((row && row.group) || '').match(/([1-4])/);
+  return m ? 'ปี ' + m[1] : '';
 }

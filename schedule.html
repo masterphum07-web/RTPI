@@ -22,10 +22,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=4"></script>
-  <script src="js/data.js?v=4"></script>
+  <script src="js/config.js?v=5"></script>
+  <script src="js/data.js?v=5"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -64,6 +64,13 @@
             <template x-for="g in groups" :key="g"><option :value="g" x-text="g"></option></template>
           </select>
         </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3 items-center">
+        <span class="text-xs font-semibold rt-muted-text mr-1">ชั้นปี:</span>
+        <button @click="level = ''" class="rt-chip" :class="level === '' ? 'rt-active' : ''">ทุกปี</button>
+        <template x-for="lv in ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4']" :key="lv">
+          <button @click="level = (level === lv ? '' : lv)" class="rt-chip" :class="level === lv ? 'rt-active' : ''" x-text="lv"></button>
+        </template>
       </div>
       <div class="flex flex-wrap gap-2 mt-3 items-center">
         <span class="text-xs font-semibold rt-muted-text mr-1">มุมมอง:</span>
@@ -177,7 +184,7 @@
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=4"></script>
+  <script src="js/ui.js?v=5"></script>
   <script>
     rtRenderHeader('schedule');
     rtRenderFooter();
@@ -193,6 +200,7 @@
         year: '',
         term: '',
         group: '',
+        level: '',
         async init() {
           this.apply(await RTData.load());
           document.addEventListener('rt:updated', e => this.apply(e.detail));
@@ -216,7 +224,8 @@
             .filter(r =>
               (!this.year || r.year === this.year) &&
               (!this.term || r.term === this.term) &&
-              (!this.group || r.group === this.group)
+              (!this.group || r.group === this.group) &&
+              (!this.level || rtLevelOf(r) === this.level)
             )
             .sort((a, b) =>
               DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) ||

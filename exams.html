@@ -22,10 +22,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=4"></script>
-  <script src="js/data.js?v=4"></script>
+  <script src="js/config.js?v=5"></script>
+  <script src="js/data.js?v=5"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -68,6 +68,13 @@
               <template x-for="t in terms" :key="t"><option :value="t" x-text="t"></option></template>
             </select>
           </div>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-3 items-center">
+          <span class="text-xs font-semibold rt-muted-text mr-1">ชั้นปี:</span>
+          <button @click="level = ''" class="rt-chip" :class="level === '' ? 'rt-active' : ''">ทุกปี</button>
+          <template x-for="lv in ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4']" :key="lv">
+            <button @click="level = (level === lv ? '' : lv)" class="rt-chip" :class="level === lv ? 'rt-active' : ''" x-text="lv"></button>
+          </template>
         </div>
         <div class="flex flex-wrap gap-2 mt-3">
           <button @click="type = ''" class="rt-chip" :class="type === '' ? 'rt-active' : ''">ทุกประเภท</button>
@@ -164,7 +171,7 @@
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=4"></script>
+  <script src="js/ui.js?v=5"></script>
   <script>
     rtRenderHeader('exams');
     rtRenderFooter();
@@ -180,6 +187,7 @@
         year: '',
         term: '',
         type: '',
+        level: '',
         async init() {
           this.apply(await RTData.load());
           document.addEventListener('rt:updated', e => this.apply(e.detail));
@@ -205,6 +213,7 @@
               (!this.year || e.year === this.year) &&
               (!this.term || e.term === this.term) &&
               (!this.type || e.type === this.type) &&
+              (!this.level || rtLevelOf(e) === this.level) &&
               (!q || (e.subject + ' ' + e.code + ' ' + e.room + ' ' + e.group).toLowerCase().includes(q))
             )
             .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || ''));

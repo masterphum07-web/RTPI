@@ -50,9 +50,8 @@ function rtRenderHeader(active) {
       <div class="bg-[var(--rt-navy-deep)] text-white">
         <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <a href="index.html" class="flex items-center gap-3 min-w-0 group">
-            <span class="flex items-center gap-1 bg-white rounded-xl p-1 shrink-0 group-hover:scale-105 transition">
-              <img src="icons/logo-college.png" class="h-9 w-9 object-contain" alt="โลโก้วิทยาลัย">
-              <img src="icons/logo-dept.png" class="h-9 w-9 object-contain" alt="โลโก้สาขา">
+            <span class="flex items-center bg-white rounded-xl p-1 shrink-0 group-hover:scale-105 transition">
+              <img src="icons/logo-dept.png" class="h-10 w-10 object-contain" alt="โลโก้สาขา">
             </span>
             <span class="min-w-0">
               <span class="block rt-serif font-semibold text-base sm:text-xl leading-tight truncate">${rtSiteName(window.__rtCfg)}</span>
@@ -98,9 +97,8 @@ function rtRenderFooter() {
       <div class="max-w-6xl mx-auto px-4 py-10 grid gap-8 md:grid-cols-3 text-sm">
         <div>
           <div class="flex items-center gap-2.5 mb-3">
-            <span class="flex items-center gap-1 bg-white rounded-lg p-1">
-              <img src="icons/logo-college.png" class="h-8 w-8 object-contain" alt="โลโก้วิทยาลัย">
-              <img src="icons/logo-dept.png" class="h-8 w-8 object-contain" alt="โลโก้สาขา">
+            <span class="flex items-center bg-white rounded-lg p-1">
+              <img src="icons/logo-dept.png" class="h-9 w-9 object-contain" alt="โลโก้สาขา">
             </span>
             <span class="rt-serif font-semibold text-white text-base leading-tight">${rtSiteName(window.__rtCfg)}</span>
           </div>

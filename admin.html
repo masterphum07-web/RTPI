@@ -23,10 +23,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=4"></script>
-  <script src="js/data.js?v=4"></script>
+  <script src="js/config.js?v=5"></script>
+  <script src="js/data.js?v=5"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -65,6 +65,7 @@
     <!-- ══ แผงแอดมิน ══ -->
     <div x-show="authed" x-cloak>
       <div class="flex flex-wrap gap-2 mb-5">
+        <button @click="tab = 'dash'" class="rt-chip" :class="tab === 'dash' ? 'rt-active' : ''">📊 ภาพรวม</button>
         <button @click="tab = 'upload'" class="rt-chip" :class="tab === 'upload' ? 'rt-active' : ''">📤 อัปโหลดรูป</button>
         <button @click="tab = 'manage'" class="rt-chip" :class="tab === 'manage' ? 'rt-active' : ''">🗂 จัดการรูปทั้งหมด</button>
         <button @click="tab = 'rows'" class="rt-chip" :class="tab === 'rows' ? 'rt-active' : ''">📋 เพิ่มข้อมูลตาราง</button>
@@ -75,8 +76,112 @@
            :class="notice.ok ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-700'"
            x-text="notice.text"></div>
 
+      <!-- ── แดชบอร์ดภาพรวม ── -->
+      <section x-show="tab === 'dash'" x-cloak>
+        <!-- สถิติหลัก -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+          <div class="rt-card p-4 text-center">
+            <p class="text-2xl sm:text-3xl rt-serif font-bold rt-navy-text" x-text="stats.courses"></p>
+            <p class="text-xs rt-muted-text mt-0.5">รายวิชาเทอมนี้</p>
+          </div>
+          <div class="rt-card p-4 text-center">
+            <p class="text-2xl sm:text-3xl rt-serif font-bold rt-navy-text" x-text="stats.lessons"></p>
+            <p class="text-xs rt-muted-text mt-0.5">คาบเรียนทั้งหมด</p>
+          </div>
+          <div class="rt-card p-4 text-center">
+            <p class="text-2xl sm:text-3xl rt-serif font-bold rt-navy-text" x-text="stats.upcoming"></p>
+            <p class="text-xs rt-muted-text mt-0.5">การสอบที่กำลังจะถึง</p>
+          </div>
+          <div class="rt-card p-4 text-center">
+            <p class="text-2xl sm:text-3xl rt-serif font-bold rt-navy-text" x-text="stats.posts"></p>
+            <p class="text-xs rt-muted-text mt-0.5">โพสต์/ประกาศ</p>
+          </div>
+          <div class="rt-card p-4 text-center">
+            <p class="text-2xl sm:text-3xl rt-serif font-bold rt-navy-text" x-text="stats.images"></p>
+            <p class="text-xs rt-muted-text mt-0.5">รูปในระบบ</p>
+          </div>
+        </div>
+
+        <!-- สถานะการเชื่อมต่อ -->
+        <div class="rt-card p-4 mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          <span class="flex items-center gap-2">
+            <span class="rt-dot" :class="readOk ? 'rt-dot-live' : 'rt-dot-off'"></span>
+            อ่านข้อมูลจากชีต: <b x-text="readOk ? 'ปกติ' : 'ผิดพลาด'"></b>
+          </span>
+          <span class="flex items-center gap-2">
+            <span class="rt-dot" :class="scriptOk ? 'rt-dot-live' : 'rt-dot-off'"></span>
+            ระบบอัปโหลด (Apps Script): <b x-text="scriptOk ? 'พร้อมใช้งาน' : 'ยังใช้ไม่ได้'"></b>
+          </span>
+          <span class="rt-muted-text" x-show="!scriptOk">→ วาง Code.gs รุ่นใหม่แล้ว Deploy เวอร์ชันใหม่ (ดู README)</span>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-2">
+          <!-- การสอบใกล้ถึง -->
+          <div class="rt-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="rt-serif font-bold rt-navy-text">⏳ การสอบใกล้ถึง</h3>
+              <a href="exams.html" class="text-xs rt-navy-text underline">ดูทั้งหมด →</a>
+            </div>
+            <template x-if="nextExams.length === 0">
+              <p class="rt-muted-text text-sm py-4 text-center">ยังไม่มีกำหนดสอบที่กำลังจะถึง</p>
+            </template>
+            <div class="space-y-2">
+              <template x-for="(e, i) in nextExams" :key="'nx' + i">
+                <div class="flex items-center gap-3 text-sm border-b border-[var(--rt-border)] pb-2 last:border-0 last:pb-0">
+                  <span class="text-xs font-bold rounded-full px-2 py-0.5 shrink-0"
+                        :class="rtDaysUntil(e.date) <= 3 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'"
+                        x-text="'อีก ' + rtDaysUntil(e.date) + ' วัน'"></span>
+                  <span class="flex-1 min-w-0 truncate font-medium" x-text="e.subject"></span>
+                  <span class="rt-muted-text text-xs whitespace-nowrap" x-text="rtThaiDate(e.date)"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- กิจกรรมล่าสุด -->
+          <div class="rt-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="rt-serif font-bold rt-navy-text">📰 ประกาศ/กิจกรรมล่าสุด</h3>
+              <a href="activities.html" class="text-xs rt-navy-text underline">ดูทั้งหมด →</a>
+            </div>
+            <template x-if="latestPosts.length === 0">
+              <p class="rt-muted-text text-sm py-4 text-center">ยังไม่มีโพสต์</p>
+            </template>
+            <div class="space-y-2">
+              <template x-for="(p, i) in latestPosts" :key="'lp' + i">
+                <div class="flex items-center gap-3 text-sm border-b border-[var(--rt-border)] pb-2 last:border-0 last:pb-0">
+                  <span class="text-xs rt-navy-soft rt-navy-text rounded px-2 py-0.5 shrink-0" x-text="p.category || 'ทั่วไป'"></span>
+                  <span class="flex-1 min-w-0 truncate font-medium" x-text="p.title"></span>
+                  <span class="rt-muted-text text-xs whitespace-nowrap" x-text="rtThaiDate(p.date)"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- รูปล่าสุด -->
+        <div class="rt-card p-5 mt-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="rt-serif font-bold rt-navy-text">🖼 รูปล่าสุดในระบบ</h3>
+            <button @click="tab = 'upload'" class="text-xs rt-navy-text underline">+ อัปโหลดรูป</button>
+          </div>
+          <template x-if="images.length === 0">
+            <p class="rt-muted-text text-sm py-4 text-center">ยังไม่มีรูป — เริ่มอัปโหลดได้ที่แท็บ "อัปโหลดรูป"</p>
+          </template>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <template x-for="(im, i) in images.slice(0, 4)" :key="'im' + i">
+              <div class="rounded-lg overflow-hidden border border-[var(--rt-border)] cursor-zoom-in"
+                   @click="rtOpenLightbox(rtDirectImage(im.image), im.title)">
+                <img :src="rtDirectImage(im.image)" class="w-full h-24 object-contain bg-[var(--rt-surface-2)]" loading="lazy" alt="">
+                <p class="text-xs px-2 py-1.5 truncate rt-muted-text" x-text="im.title || im.category"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </section>
+
       <!-- ── อัปโหลดรูป ── -->
-      <section x-show="tab === 'upload'" class="rt-card p-6">
+      <section x-show="tab === 'upload'" x-cloak class="rt-card p-6">
         <h2 class="rt-serif font-bold rt-navy-text text-lg mb-4">📤 อัปโหลดรูปตารางสอบ / ตารางสอน / อื่น ๆ</h2>
         <div class="grid gap-5 md:grid-cols-2">
           <div>
@@ -197,15 +302,15 @@
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=4"></script>
+  <script src="js/ui.js?v=5"></script>
   <script>
     rtRenderHeader('admin');
     rtRenderFooter();
 
     function adminPage() {
       const COLS = {
-        Exams: ['ปีการศึกษา', 'ภาคเรียน', 'ประเภทการสอบ', 'รหัสวิชา', 'รายวิชา', 'กลุ่มสอบ', 'วันที่สอบ', 'เวลา', 'ห้องสอบ', 'หมายเหตุ'],
-        Schedule: ['ปีการศึกษา', 'ภาคเรียน', 'กลุ่มเรียน', 'วัน', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'รหัสวิชา', 'รายวิชา', 'ห้อง', 'อาจารย์'],
+        Exams: ['ปีการศึกษา', 'ภาคเรียน', 'ประเภทการสอบ', 'รหัสวิชา', 'รายวิชา', 'กลุ่มสอบ', 'วันที่สอบ', 'เวลา', 'ห้องสอบ', 'หมายเหตุ', 'ชั้นปี (ปี 1-4)'],
+        Schedule: ['ปีการศึกษา', 'ภาคเรียน', 'กลุ่มเรียน', 'วัน', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'รหัสวิชา', 'รายวิชา', 'ห้อง', 'อาจารย์', 'ชั้นปี (ปี 1-4)'],
         Posts: ['รหัสโพสต์', 'หัวข้อ', 'หมวดหมู่', 'เนื้อหา', 'ลิงก์รูป', 'ลิงก์เพิ่มเติม', 'ผู้โพสต์', 'วันที่โพสต์', 'ปักหมุด(TRUE/FALSE)'],
       };
       return {
@@ -214,7 +319,10 @@
         error: '',
         showPass: false,
         pass: '',
-        tab: 'upload',
+        tab: 'dash',
+        scriptOk: false,
+        readOk: false,
+        data: { schedule: [], exams: [], posts: [], config: {} },
         notice: { ok: true, text: '' },
         // อัปโหลด
         file: null,
@@ -241,7 +349,7 @@
           if (saved) {
             this.pass = saved;
             const r = this.checkResult(await this.api('ping'));
-            if (r.ok) this.enter();
+            if (r.ok) { this.scriptOk = true; this.enter(); }
           }
           this.refreshImages();
         },
@@ -272,6 +380,7 @@
           const r = this.checkResult(await this.api('ping'));
           this.busy = false;
           if (r.ok) {
+            this.scriptOk = true;
             sessionStorage.setItem('rt-admin-pass', this.pass);
             this.enter();
           } else {
@@ -339,12 +448,38 @@
         async refreshImages(force) {
           this.loadingImages = true;
           const d = await RTData.load(force);
+          this.data = d;
+          this.readOk = RTData.state() === 'live';
           this.images = [...(d.images || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           this.loadingImages = false;
           if (this.authed && d.config && this.form.year === '2569' && d.config.currentYear) {
             this.form.year = d.config.currentYear;
             if (d.config.currentTerm) this.form.term = d.config.currentTerm;
           }
+        },
+
+        get stats() {
+          const yr = this.data.config && this.data.config.currentYear;
+          const yr2 = this.data.exams || [];
+          const courses = new Set((this.data.schedule || []).filter(r => !yr || r.year === yr).map(r => (r.code || '') + (r.subject || ''))).size;
+          const upcoming = yr2.filter(e => { const d = rtDaysUntil(e.date); return d !== null && d >= 0; }).length;
+          return {
+            courses,
+            lessons: (this.data.schedule || []).length,
+            upcoming,
+            posts: (this.data.posts || []).length,
+            images: this.images.length,
+          };
+        },
+        get nextExams() {
+          return (this.data.exams || [])
+            .filter(e => { const d = rtDaysUntil(e.date); return d !== null && d >= 0; })
+            .sort((a, b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
+        },
+        get latestPosts() {
+          return [...(this.data.posts || [])]
+            .sort((a, b) => (b.pinned === 'TRUE') - (a.pinned === 'TRUE') || (b.date || '').localeCompare(a.date || ''))
+            .slice(0, 5);
         },
 
         async removeImage(im) {
