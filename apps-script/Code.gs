@@ -61,6 +61,21 @@ const RT_SHEET_DEFS = [
     ],
   },
   {
+    name: 'ExamImages',
+    color: '#8a6d14',
+    headers: [
+      { th: 'ปีการศึกษา', key: 'year' },
+      { th: 'ภาคเรียน', key: 'term', list: ['ภาคเรียนที่ 1', 'ภาคเรียนที่ 2', 'ภาคฤดูร้อน'] },
+      { th: 'ประเภทการสอบ', key: 'type', list: ['กลางภาค', 'ปลายภาค', 'สอบเก็บ', 'อื่น ๆ'] },
+      { th: 'ชื่อรูป/คำอธิบาย', key: 'title' },
+      { th: 'ลิงก์รูปภาพ', key: 'image' },
+      { th: 'วันที่เผยแพร่', key: 'date', isDate: true },
+    ],
+    samples: [
+      ['2569', 'ภาคเรียนที่ 1', 'กลางภาค', 'ตัวอย่าง: ตารางสอบกลางภาค 1/2569', 'https://drive.google.com/file/d/ใส่ไอดีไฟล์ที่นี่/view', new Date(2026, 8, 1)],
+    ],
+  },
+  {
     name: 'Posts',
     color: '#254b85',
     headers: [
@@ -204,12 +219,13 @@ function doGet(e) {
 
   if (want === 'config') {
     payload.config = rowsToConfig(sheetRows('Config'));
-  } else if (want === 'schedule' || want === 'exams' || want === 'posts') {
+  } else if (want === 'schedule' || want === 'exams' || want === 'posts' || want === 'examimages') {
     payload[want] = sheetRows(defName(want));
   } else {
     payload.config = rowsToConfig(sheetRows('Config'));
     payload.schedule = sheetRows('Schedule');
     payload.exams = sheetRows('Exams');
+    payload.examImages = sheetRows('ExamImages');
     payload.posts = sheetRows('Posts');
   }
 
@@ -219,7 +235,7 @@ function doGet(e) {
 }
 
 function defName(lower) {
-  const map = { schedule: 'Schedule', exams: 'Exams', posts: 'Posts' };
+  const map = { schedule: 'Schedule', exams: 'Exams', posts: 'Posts', examimages: 'ExamImages' };
   return map[lower] || lower;
 }
 
@@ -237,7 +253,7 @@ function jsonOut(obj) {
 
 /** ล้าง cache เมื่อแก้ข้อมูลแล้วอยากให้เว็บเห็นทันที */
 function clearCache() {
-  CacheService.getScriptCache().removeAll(['rtpi_all', 'rtpi_schedule', 'rtpi_exams', 'rtpi_posts', 'rtpi_config']);
+  CacheService.getScriptCache().removeAll(['rtpi_all', 'rtpi_schedule', 'rtpi_exams', 'rtpi_posts', 'rtpi_examimages', 'rtpi_config']);
   Logger.log('ล้าง cache แล้ว');
 }
 

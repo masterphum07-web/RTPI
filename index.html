@@ -4,125 +4,169 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>หน้าแรก | สาขาวิชารังสีเทคนิค วทก.</title>
-  <meta name="description" content="ศูนย์รวมตารางสอน ตารางสอบ และข่าวสารกิจกรรม สาขาวิชารังสีเทคนิค วิทยาลัยพระบรมราชชนก">
+  <meta name="description" content="ศูนย์รวมตารางสอน ตารางสอบ และข่าวสารกิจกรรม สาขาวิชารังสีเทคนิค วิทยาลัยพระบรมราชชนก (วทก.)">
+  <meta name="theme-color" content="#0f2447">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: { extend: {
         colors: {
           navy: {50:'#eef3fb',100:'#d8e3f5',200:'#b3c7e8',600:'#254b85',700:'#1d4076',800:'#16325c',900:'#0f2447'},
-          gold: {400:'#d4af37',500:'#c9a227',600:'#a9861d'},
+          gold: {300:'#e7cf7a',400:'#d4af37',500:'#c9a227',600:'#a9861d'},
         },
-        fontFamily: { sans: ['Sarabun','sans-serif'] },
+        fontFamily: { sans: ['Sarabun','sans-serif'], serif: ['"Noto Serif Thai"','Sarabun','serif'] },
       } }
     };
   </script>
   <link rel="stylesheet" href="css/style.css">
+  <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="js/config.js"></script>
-  <script src="js/sample-data.js"></script>
   <script src="js/data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
   <div id="rt-header"></div>
 
   <main x-data="homePage()" class="flex-1">
     <!-- Hero -->
-    <section class="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-600 text-white">
-      <div class="max-w-6xl mx-auto px-4 py-14 sm:py-20">
-        <p class="text-gold-400 font-medium mb-2" x-text="cfg.siteFullName || 'วิทยาลัยพระบรมราชชนก (วทก.)'"></p>
-        <h1 class="text-3xl sm:text-5xl font-bold leading-tight mb-4">
-          ศูนย์รวมตารางสอน ตารางสอบ<br class="sm:hidden"> และข่าวสารสาขา
+    <section class="relative overflow-hidden bg-[var(--rt-navy-deep)] text-white">
+      <div class="absolute inset-0 opacity-[0.06]" style="background-image:radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);background-size:26px 26px"></div>
+      <div class="max-w-6xl mx-auto px-4 py-14 sm:py-20 relative">
+        <p class="text-gold-300 font-medium tracking-wide mb-3 rt-serif" x-text="cfg.siteFullName || 'วิทยาลัยพระบรมราชชนก (วทก.)'"></p>
+        <h1 class="rt-serif text-3xl sm:text-5xl font-bold leading-[1.25] mb-5">
+          ศูนย์รวมตารางสอน ตารางสอบ<br class="sm:hidden"> และข่าวสารของสาขา
         </h1>
-        <p class="text-navy-100/90 max-w-2xl mb-6" x-show="cfg.currentYear" x-cloak>
-          ปีการศึกษา <span class="font-semibold text-white" x-text="cfg.currentYear"></span>
-          · <span class="font-semibold text-white" x-text="cfg.currentTerm"></span>
-        </p>
+        <div class="flex flex-wrap items-center gap-3 mb-8" x-show="cfg.currentYear" x-cloak>
+          <span class="inline-flex items-center gap-2 border border-gold-500/50 text-gold-300 rounded-full px-4 py-1.5 text-sm font-medium">
+            ปีการศึกษา <span class="font-bold" x-text="cfg.currentYear"></span>
+          </span>
+          <span class="inline-flex items-center gap-2 border border-white/20 text-white/80 rounded-full px-4 py-1.5 text-sm">
+            <span x-text="cfg.currentTerm"></span>
+          </span>
+        </div>
         <div class="flex flex-wrap gap-3">
-          <a href="exams.html" class="bg-gold-500 hover:bg-gold-400 text-navy-900 font-semibold px-6 py-3 rounded-lg shadow transition">
-            📅 ดูตารางสอบ
-          </a>
-          <a href="schedule.html" class="border border-navy-200/40 hover:bg-navy-800 text-white font-semibold px-6 py-3 rounded-lg transition">
-            📚 ดูตารางสอน
-          </a>
+          <a href="exams.html" class="rt-btn rt-btn-gold !px-7 !py-3">📅 ดูตารางสอบ</a>
+          <a href="schedule.html" class="rt-btn border border-white/30 text-white hover:border-gold-400 hover:text-gold-300 !px-7 !py-3">📚 ดูตารางสอน</a>
+          <a href="search.html" class="rt-btn border border-white/30 text-white hover:border-gold-400 hover:text-gold-300 !px-7 !py-3">🔍 ค้นหาทุกอย่าง</a>
         </div>
       </div>
     </section>
 
-    <!-- สอบถัดไป -->
-    <section class="max-w-6xl mx-auto px-4 -mt-8 relative z-10">
-      <div class="bg-white rounded-xl shadow-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-navy-800">⏳ การสอบใกล้ถึง</h2>
-          <a href="exams.html" class="text-sm text-navy-600 hover:text-navy-800 font-medium underline">ดูทั้งหมด →</a>
+    <!-- สถิติ -->
+    <section class="max-w-6xl mx-auto px-4 -mt-9 relative z-10">
+      <div class="rt-card p-5 grid grid-cols-3 divide-x divide-[var(--rt-border)]">
+        <div class="text-center px-2">
+          <p class="text-2xl sm:text-4xl rt-serif font-bold rt-navy-text" x-text="loading ? '–' : stats.courses"></p>
+          <p class="text-xs sm:text-sm rt-muted-text mt-1">รายวิชาที่เปิดสอนเทอมนี้</p>
         </div>
-        <div x-show="loading" class="text-slate-400 py-6 text-center">กำลังโหลดข้อมูล…</div>
-        <div x-show="!loading && nextExams.length === 0" class="text-slate-400 py-6 text-center">ยังไม่มีกำหนดสอบที่กำลังจะถึง</div>
+        <div class="text-center px-2">
+          <p class="text-2xl sm:text-4xl rt-serif font-bold rt-navy-text" x-text="loading ? '–' : stats.upcoming"></p>
+          <p class="text-xs sm:text-sm rt-muted-text mt-1">การสอบที่กำลังจะถึง</p>
+        </div>
+        <div class="text-center px-2">
+          <p class="text-2xl sm:text-4xl rt-serif font-bold rt-navy-text" x-text="loading ? '–' : stats.posts"></p>
+          <p class="text-xs sm:text-sm rt-muted-text mt-1">ประกาศ/กิจกรรมทั้งหมด</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- สอบใกล้ถึง -->
+    <section class="max-w-6xl mx-auto px-4 mt-10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="rt-serif text-xl sm:text-2xl font-bold rt-navy-text">⏳ การสอบใกล้ถึง</h2>
+        <a href="exams.html" class="text-sm rt-navy-text hover:opacity-70 font-medium underline decoration-gold-500/60">ดูทั้งหมด →</a>
+      </div>
+      <template x-if="loading">
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <template x-for="e in nextExams" :key="e.code + e.date + e.type">
-            <div class="border border-slate-200 rounded-lg p-4 hover:border-gold-500 hover:shadow transition bg-white">
-              <div class="flex items-start justify-between gap-2">
-                <p class="font-semibold text-navy-800 leading-snug" x-text="e.subject"></p>
-                <span class="shrink-0 text-xs font-bold rounded-full px-2.5 py-1"
-                      :class="e._d <= 3 ? 'bg-red-100 text-red-700' : (e._d <= 7 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')"
-                      x-text="'อีก ' + e._d + ' วัน'"></span>
-              </div>
-              <p class="text-sm text-slate-500 mt-1">
-                <span x-text="rtThaiDate(e.date)"></span> · <span x-text="e.time"></span>
-              </p>
-              <p class="text-sm mt-1">
-                <span class="inline-block bg-navy-50 text-navy-700 rounded px-2 py-0.5 text-xs font-medium" x-text="e.type"></span>
-                <span class="text-slate-400 text-xs" x-text="'กลุ่ม ' + e.group"></span>
-              </p>
-            </div>
-          </template>
+          <div class="rt-skeleton h-32"></div><div class="rt-skeleton h-32"></div>
+          <div class="rt-skeleton h-32"></div><div class="rt-skeleton h-32"></div>
         </div>
+      </template>
+      <template x-if="!loading && nextExams.length === 0">
+        <div class="rt-empty">
+          <p class="text-3xl mb-2">🗓</p>
+          <p class="font-medium">ยังไม่มีกำหนดสอบที่กำลังจะถึง</p>
+          <p class="text-sm mt-1">เมื่อสาขาเพิ่มข้อมูลใน Google Sheets ระบบจะแสดงที่นี่โดยอัตโนมัติ</p>
+        </div>
+      </template>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <template x-for="e in nextExams" :key="e.code + e.date + e.type">
+          <div class="rt-card p-4 hover:-translate-y-0.5 transition-all">
+            <div class="flex items-start justify-between gap-2">
+              <p class="font-semibold rt-navy-text leading-snug" x-text="e.subject"></p>
+              <span class="shrink-0 text-xs font-bold rounded-full px-2.5 py-1"
+                    :class="e._d <= 3 ? 'bg-red-100 text-red-700' : (e._d <= 7 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')"
+                    x-text="'อีก ' + e._d + ' วัน'"></span>
+            </div>
+            <p class="text-sm rt-muted-text mt-1.5">
+              <span x-text="rtThaiDate(e.date)"></span> · <span x-text="e.time"></span>
+            </p>
+            <p class="text-sm mt-1.5 flex items-center gap-2 flex-wrap">
+              <span class="inline-block rt-navy-soft rt-navy-text rounded px-2 py-0.5 text-xs font-medium" x-text="e.type"></span>
+              <span class="rt-muted-text text-xs" x-text="'กลุ่ม ' + e.group"></span>
+            </p>
+          </div>
+        </template>
       </div>
     </section>
 
     <!-- ประกาศ/กิจกรรมล่าสุด -->
     <section class="max-w-6xl mx-auto px-4 mt-10">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-navy-800">📰 ประกาศและกิจกรรมล่าสุด</h2>
-        <a href="activities.html" class="text-sm text-navy-600 hover:text-navy-800 font-medium underline">ดูทั้งหมด →</a>
+        <h2 class="rt-serif text-xl sm:text-2xl font-bold rt-navy-text">📰 ประกาศและกิจกรรมล่าสุด</h2>
+        <a href="activities.html" class="text-sm rt-navy-text hover:opacity-70 font-medium underline decoration-gold-500/60">ดูทั้งหมด →</a>
       </div>
+      <template x-if="loading">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="rt-skeleton h-36"></div><div class="rt-skeleton h-36"></div>
+        </div>
+      </template>
+      <template x-if="!loading && latestPosts.length === 0">
+        <div class="rt-empty">
+          <p class="text-3xl mb-2">📢</p>
+          <p class="font-medium">ยังไม่มีประกาศหรือกิจกรรม</p>
+          <p class="text-sm mt-1">โพสต์ได้ที่แท็บ Posts ใน Google Sheets ของสาขา</p>
+        </div>
+      </template>
       <div class="grid gap-4 sm:grid-cols-2">
-        <template x-for="p in latestPosts" :key="p.id">
-          <a href="activities.html" class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-navy-200 transition block">
-            <div class="flex items-center gap-2 mb-2">
+        <template x-for="p in latestPosts" :key="p.id || p.title">
+          <a href="activities.html" class="rt-card p-5 hover:-translate-y-0.5 transition-all block">
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
               <span class="text-xs font-semibold rounded-full px-2.5 py-1"
-                    :class="{'bg-blue-100 text-blue-700': p.category==='กิจกรรม', 'bg-navy-100 text-navy-700': p.category==='ประกาศทั่วไป', 'bg-emerald-100 text-emerald-700': p.category==='ทุนการศึกษา', 'bg-purple-100 text-purple-700': p.category==='ฝึกงาน/สมัครงาน', 'bg-slate-100 text-slate-600': !['กิจกรรม','ประกาศทั่วไป','ทุนการศึกษา','ฝึกงาน/สมัครงาน'].includes(p.category)}"
-                    x-text="p.category"></span>
+                    :class="{'bg-blue-100 text-blue-700': p.category==='กิจกรรม', 'rt-navy-soft rt-navy-text': p.category==='ประกาศทั่วไป', 'bg-emerald-100 text-emerald-700': p.category==='ทุนการศึกษา', 'bg-purple-100 text-purple-700': p.category==='ฝึกงาน/สมัครงาน', 'bg-slate-100 text-slate-600': !['กิจกรรม','ประกาศทั่วไป','ทุนการศึกษา','ฝึกงาน/สมัครงาน'].includes(p.category)}"
+                    x-text="p.category || 'ทั่วไป'"></span>
               <span x-show="p.pinned === 'TRUE'" class="text-xs text-gold-600 font-semibold">📌 ปักหมุด</span>
-              <span class="text-xs text-slate-400 ml-auto" x-text="rtThaiDate(p.date)"></span>
+              <span class="text-xs rt-muted-text ml-auto" x-text="rtThaiDate(p.date)"></span>
             </div>
-            <h3 class="font-semibold text-navy-800 leading-snug" x-text="p.title"></h3>
-            <p class="text-sm text-slate-500 mt-1 line-clamp-2" x-text="p.body"></p>
+            <h3 class="rt-serif font-semibold rt-navy-text text-lg leading-snug" x-text="p.title"></h3>
+            <p class="text-sm rt-muted-text mt-1.5 line-clamp-2" x-text="p.body"></p>
           </a>
         </template>
       </div>
     </section>
 
     <!-- ลิงก์ด่วน -->
-    <section class="max-w-6xl mx-auto px-4 mt-10 mb-4">
+    <section class="max-w-6xl mx-auto px-4 mt-10 mb-6">
       <div class="grid gap-4 sm:grid-cols-3">
-        <a href="schedule.html" class="bg-navy-800 text-white rounded-xl p-6 hover:bg-navy-700 transition">
-          <p class="text-2xl mb-1">📚</p>
-          <p class="font-semibold">ตารางสอน</p>
-          <p class="text-sm text-navy-100/80">ดูตารางเรียนรายสัปดาห์ แยกตามกลุ่มเรียน</p>
+        <a href="schedule.html" class="rt-card p-6 hover:-translate-y-0.5 transition-all group">
+          <p class="text-2xl mb-1.5">📚</p>
+          <p class="rt-serif font-semibold rt-navy-text text-lg group-hover:text-gold-600 transition">ตารางสอน</p>
+          <p class="text-sm rt-muted-text mt-1">ดูตารางเรียนรายสัปดาห์ แยกตามกลุ่มเรียน ทั้งแบบรายวันและแบบตาราง</p>
         </a>
-        <a href="exams.html" class="bg-navy-800 text-white rounded-xl p-6 hover:bg-navy-700 transition">
-          <p class="text-2xl mb-1">📅</p>
-          <p class="font-semibold">ตารางสอบ</p>
-          <p class="text-sm text-navy-100/80">กลางภาค ปลายภาค สอบเก็บ พร้อมนับถอยหลัง</p>
+        <a href="exams.html" class="rt-card p-6 hover:-translate-y-0.5 transition-all group">
+          <p class="text-2xl mb-1.5">📅</p>
+          <p class="rt-serif font-semibold rt-navy-text text-lg group-hover:text-gold-600 transition">ตารางสอบ</p>
+          <p class="text-sm rt-muted-text mt-1">ตารางข้อมูลพร้อมนับถอยหลัง และรูปประกาศตารางสอบจากสาขา</p>
         </a>
-        <a href="activities.html" class="bg-gold-500 text-navy-900 rounded-xl p-6 hover:bg-gold-400 transition">
-          <p class="text-2xl mb-1">🎉</p>
-          <p class="font-semibold">กิจกรรม/ข่าวสาร</p>
-          <p class="text-sm text-navy-800/80">ติดตามกิจกรรม ทุน และการอบรมของสาขา</p>
+        <a href="activities.html" class="rt-card p-6 hover:-translate-y-0.5 transition-all group !border-gold-500/50">
+          <p class="text-2xl mb-1.5">🎉</p>
+          <p class="rt-serif font-semibold rt-navy-text text-lg group-hover:text-gold-600 transition">กิจกรรม/ข่าวสาร</p>
+          <p class="text-sm rt-muted-text mt-1">ติดตามกิจกรรม ทุนการศึกษา และการอบรมของสาขา</p>
         </a>
       </div>
     </section>
@@ -141,6 +185,7 @@
         cfg: {},
         exams: [],
         posts: [],
+        schedule: [],
         async init() {
           this.apply(await RTData.load());
           document.addEventListener('rt:updated', e => this.apply(e.detail));
@@ -149,7 +194,16 @@
           this.cfg = d.config;
           this.exams = d.exams;
           this.posts = d.posts;
+          this.schedule = d.schedule;
           this.loading = false;
+        },
+        get stats() {
+          const yr = this.cfg.currentYear;
+          const courses = new Set(
+            this.schedule.filter(r => !yr || r.year === yr).map(r => (r.code || '') + (r.subject || ''))
+          ).size;
+          const upcoming = this.exams.filter(e => { const d = rtDaysUntil(e.date); return d !== null && d >= 0; }).length;
+          return { courses, upcoming, posts: this.posts.length };
         },
         get nextExams() {
           return this.exams

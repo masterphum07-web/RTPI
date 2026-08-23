@@ -4,119 +4,162 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ตารางสอบ | สาขาวิชารังสีเทคนิค วทก.</title>
+  <meta name="theme-color" content="#0f2447">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: { extend: {
         colors: {
           navy: {50:'#eef3fb',100:'#d8e3f5',200:'#b3c7e8',600:'#254b85',700:'#1d4076',800:'#16325c',900:'#0f2447'},
-          gold: {400:'#d4af37',500:'#c9a227',600:'#a9861d'},
+          gold: {300:'#e7cf7a',400:'#d4af37',500:'#c9a227',600:'#a9861d'},
         },
-        fontFamily: { sans: ['Sarabun','sans-serif'] },
+        fontFamily: { sans: ['Sarabun','sans-serif'], serif: ['"Noto Serif Thai"','Sarabun','serif'] },
       } }
     };
   </script>
   <link rel="stylesheet" href="css/style.css">
+  <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="js/config.js"></script>
-  <script src="js/sample-data.js"></script>
   <script src="js/data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
   <div id="rt-header"></div>
 
   <main x-data="examsPage()" class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
     <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-navy-800">📅 ตารางสอบ</h1>
-        <p class="text-slate-500 text-sm mt-1">ตรวจสอบวันสอบ ห้องสอบ และเวลาได้ที่นี่ — ข้อมูลอัปเดตอัตโนมัติจากฝ่ายวิชาการ</p>
+        <h1 class="rt-serif text-2xl sm:text-3xl font-bold rt-navy-text">📅 ตารางสอบ</h1>
+        <p class="rt-muted-text text-sm mt-1">ตรวจสอบวันสอบ เวลา และห้องสอบ — หรือดูรูปประกาศตารางสอบที่สาขาเผยแพร่</p>
       </div>
-      <button onclick="window.print()" class="rt-noprint text-sm border border-slate-300 hover:border-navy-500 rounded-lg px-4 py-2 font-medium transition">🖨 พิมพ์ตาราง</button>
+      <button onclick="window.print()" x-show="view === 'table'" class="rt-btn rt-btn-ghost rt-noprint">🖨 พิมพ์ตาราง</button>
     </div>
 
-    <!-- ตัวกรอง -->
-    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-5 rt-noprint">
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="lg:col-span-2">
-          <label class="block text-xs font-semibold text-slate-500 mb-1">ค้นหารายวิชา / รหัสวิชา / ห้องสอบ</label>
-          <input type="text" x-model="q" placeholder="เช่น ฟิสิกส์, 401101, ห้องสอบ A"
-                 class="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-navy-200 focus:border-navy-500">
+    <!-- แท็บ: ตารางข้อมูล / รูปประกาศ -->
+    <div class="flex gap-2 mb-5 rt-noprint">
+      <button @click="view = 'table'" class="rt-chip" :class="view === 'table' ? 'rt-active' : ''">📋 ตารางข้อมูล</button>
+      <button @click="view = 'images'" class="rt-chip" :class="view === 'images' ? 'rt-active' : ''">🖼 รูปประกาศจากสาขา</button>
+    </div>
+
+    <!-- ════════ มุมมองตารางข้อมูล ════════ -->
+    <div x-show="view === 'table'">
+      <div class="rt-card p-4 mb-5 rt-noprint">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="lg:col-span-2">
+            <label class="block text-xs font-semibold rt-muted-text mb-1">ค้นหารายวิชา / รหัสวิชา / ห้องสอบ</label>
+            <input type="text" x-model="q" placeholder="เช่น ฟิสิกส์, 401101, ห้องสอบ A" class="rt-input">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold rt-muted-text mb-1">ปีการศึกษา</label>
+            <select x-model="year" class="rt-select">
+              <option value="">ทั้งหมด</option>
+              <template x-for="y in years" :key="y"><option :value="y" x-text="y"></option></template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold rt-muted-text mb-1">ภาคเรียน</label>
+            <select x-model="term" class="rt-select">
+              <option value="">ทั้งหมด</option>
+              <template x-for="t in terms" :key="t"><option :value="t" x-text="t"></option></template>
+            </select>
+          </div>
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">ปีการศึกษา</label>
-          <select x-model="year" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-200">
-            <option value="">ทั้งหมด</option>
-            <template x-for="y in years" :key="y"><option :value="y" x-text="y"></option></template>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">ภาคเรียน</label>
-          <select x-model="term" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-200">
-            <option value="">ทั้งหมด</option>
-            <template x-for="t in terms" :key="t"><option :value="t" x-text="t"></option></template>
-          </select>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button @click="type = ''" class="rt-chip" :class="type === '' ? 'rt-active' : ''">ทุกประเภท</button>
+          <template x-for="t in types" :key="t">
+            <button @click="type = (type === t ? '' : t)" class="rt-chip" :class="type === t ? 'rt-active' : ''" x-text="t"></button>
+          </template>
         </div>
       </div>
-      <div class="flex flex-wrap gap-2 mt-3">
-        <button @click="type = ''" class="text-sm rounded-full px-3.5 py-1.5 font-medium border transition"
-                :class="type === '' ? 'bg-navy-800 text-white border-navy-800' : 'bg-white border-slate-300 text-slate-600 hover:border-navy-400'">ทุกประเภท</button>
-        <template x-for="t in types" :key="t">
-          <button @click="type = (type === t ? '' : t)" class="text-sm rounded-full px-3.5 py-1.5 font-medium border transition"
-                  :class="type === t ? 'bg-navy-800 text-white border-navy-800' : 'bg-white border-slate-300 text-slate-600 hover:border-navy-400'"
-                  x-text="t"></button>
+
+      <template x-if="loading">
+        <div class="rt-card p-4"><div class="rt-skeleton h-10 mb-3"></div><div class="rt-skeleton h-10 mb-3"></div><div class="rt-skeleton h-10"></div></div>
+      </template>
+
+      <template x-if="!loading && filtered.length === 0">
+        <div class="rt-empty">
+          <p class="text-3xl mb-2">🗓</p>
+          <p class="font-medium">ไม่พบรายการสอบ</p>
+          <p class="text-sm mt-1">เพิ่มข้อมูลได้ที่แท็บ <b>Exams</b> ใน Google Sheets ของสาขา</p>
+        </div>
+      </template>
+
+      <template x-if="!loading && filtered.length > 0">
+        <div class="rt-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="rt-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th><th>เวลา</th><th>รหัสวิชา</th><th>รายวิชา</th>
+                  <th>ประเภท</th><th>กลุ่มสอบ</th><th>ห้องสอบ</th><th>นับถอยหลัง</th><th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(e, i) in filtered" :key="i">
+                  <tr>
+                    <td class="font-semibold rt-navy-text whitespace-nowrap" x-text="rtThaiDate(e.date)"></td>
+                    <td class="whitespace-nowrap" x-text="e.time"></td>
+                    <td class="whitespace-nowrap rt-muted-text" x-text="e.code"></td>
+                    <td x-text="e.subject"></td>
+                    <td>
+                      <span class="text-xs font-semibold rounded-full px-2 py-0.5 whitespace-nowrap"
+                            :class="e.type === 'กลางภาค' ? 'bg-amber-100 text-amber-700' : (e.type === 'ปลายภาค' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')"
+                            x-text="e.type"></span>
+                    </td>
+                    <td x-text="e.group"></td>
+                    <td x-text="e.room"></td>
+                    <td>
+                      <span class="text-xs font-bold rounded-full px-2.5 py-1 whitespace-nowrap"
+                            :class="rtDaysUntil(e.date) !== null && rtDaysUntil(e.date) < 0 ? 'bg-slate-100 text-slate-400' : (rtDaysUntil(e.date) <= 7 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')"
+                            x-text="rtDaysUntil(e.date) === null ? '-' : (rtDaysUntil(e.date) < 0 ? 'สอบแล้ว' : 'อีก ' + rtDaysUntil(e.date) + ' วัน')"></span>
+                    </td>
+                    <td class="rt-muted-text min-w-[10rem]" x-text="e.note || '-'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+      <p class="text-xs rt-muted-text mt-3" x-show="!loading">แสดง <span x-text="filtered.length"></span> รายการ · อัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
+    </div>
+
+    <!-- ════════ มุมมองรูปประกาศจากสาขา ════════ -->
+    <div x-show="view === 'images'" x-cloak>
+      <template x-if="loading">
+        <div class="grid gap-4 sm:grid-cols-2"><div class="rt-skeleton h-64"></div><div class="rt-skeleton h-64"></div></div>
+      </template>
+      <template x-if="!loading && images.length === 0">
+        <div class="rt-empty">
+          <p class="text-3xl mb-2">🖼</p>
+          <p class="font-medium">ยังไม่มีรูปประกาศตารางสอบ</p>
+          <p class="text-sm mt-2 leading-relaxed">
+            เมื่อสาขาส่งรูปตารางสอบมา ให้เพิ่มที่แท็บ <b>ExamImages</b> ใน Google Sheets<br>
+            (อัปโหลดรูปไว้ Google Drive → คลิกขวา "แชร์" ให้ทุกคนที่มีลิงก์ดูได้ → นำลิงก์มาใส่) ระบบแปลงลิงก์ให้แสดงบนเว็บเอง
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <template x-for="im in images" :key="im.image + im.title">
+          <figure class="rt-card overflow-hidden hover:-translate-y-0.5 transition-all">
+            <div class="bg-[var(--rt-surface-2)] border-b border-[var(--rt-border)] cursor-zoom-in"
+                 @click="rtOpenLightbox(rtDirectImage(im.image), im.title)">
+              <img :src="rtDirectImage(im.image)" :alt="im.title" class="w-full max-h-72 object-contain" loading="lazy">
+            </div>
+            <figcaption class="p-4 flex items-center gap-2 flex-wrap">
+              <p class="font-semibold rt-navy-text flex-1 min-w-[8rem]" x-text="im.title || 'ตารางสอบ'"></p>
+              <span class="text-xs rt-navy-soft rt-navy-text rounded-full px-2.5 py-1 font-medium" x-text="(im.type || '') + ' ' + (im.term || '')"></span>
+              <span class="text-xs rt-muted-text" x-text="rtThaiDate(im.date)"></span>
+            </figcaption>
+          </figure>
         </template>
       </div>
     </div>
-
-    <!-- ตาราง -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div x-show="loading" class="text-slate-400 py-10 text-center">กำลังโหลดข้อมูล…</div>
-      <div x-show="!loading && filtered.length === 0" class="text-slate-400 py-10 text-center">ไม่พบรายการสอบตามเงื่อนไขที่เลือก</div>
-      <div x-show="!loading && filtered.length > 0" class="overflow-x-auto">
-        <table class="rt-table">
-          <thead>
-            <tr>
-              <th>วันที่</th>
-              <th>เวลา</th>
-              <th>รหัสวิชา</th>
-              <th>รายวิชา</th>
-              <th>ประเภท</th>
-              <th>กลุ่มสอบ</th>
-              <th>ห้องสอบ</th>
-              <th>นับถอยหลัง</th>
-              <th>หมายเหตุ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template x-for="(e, i) in filtered" :key="i">
-              <tr>
-                <td class="font-semibold text-navy-800 whitespace-nowrap" x-text="rtThaiDate(e.date)"></td>
-                <td class="whitespace-nowrap" x-text="e.time"></td>
-                <td class="whitespace-nowrap text-slate-500" x-text="e.code"></td>
-                <td x-text="e.subject"></td>
-                <td>
-                  <span class="text-xs font-semibold rounded-full px-2 py-0.5 whitespace-nowrap"
-                        :class="e.type === 'กลางภาค' ? 'bg-amber-100 text-amber-700' : (e.type === 'ปลายภาค' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')"
-                        x-text="e.type"></span>
-                </td>
-                <td x-text="e.group"></td>
-                <td x-text="e.room"></td>
-                <td>
-                  <span class="text-xs font-bold rounded-full px-2.5 py-1 whitespace-nowrap"
-                        :class="rtDaysUntil(e.date) !== null && rtDaysUntil(e.date) < 0 ? 'bg-slate-100 text-slate-400' : (rtDaysUntil(e.date) <= 7 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')"
-                        x-text="rtDaysUntil(e.date) === null ? '-' : (rtDaysUntil(e.date) < 0 ? 'สอบแล้ว' : 'อีก ' + rtDaysUntil(e.date) + ' วัน')"></span>
-                </td>
-                <td class="text-slate-500 min-w-[10rem]" x-text="e.note || '-'"></td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <p class="text-xs text-slate-400 mt-3">แสดง <span x-text="filtered.length"></span> รายการ · ข้อมูลอัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
   </main>
 
   <div id="rt-footer"></div>
@@ -129,8 +172,10 @@
     function examsPage() {
       return {
         loading: true,
+        view: 'table',
         cfg: {},
         exams: [],
+        images: [],
         q: '',
         year: '',
         term: '',
@@ -142,6 +187,7 @@
         apply(d) {
           this.cfg = d.config;
           this.exams = d.exams;
+          this.images = [...(d.examImages || [])].sort((a, b) => b.date.localeCompare(a.date));
           if (!this.year && d.config.currentYear && d.exams.some(e => e.year === d.config.currentYear)) {
             this.year = d.config.currentYear;
           }

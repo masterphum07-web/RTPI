@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ค้นหา | สาขาวิชารังสีเทคนิค วทก.</title>
+  <meta name="theme-color" content="#0f2447">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          navy: {50:'#eef3fb',100:'#d8e3f5',200:'#b3c7e8',600:'#254b85',700:'#1d4076',800:'#16325c',900:'#0f2447'},
+          gold: {300:'#e7cf7a',400:'#d4af37',500:'#c9a227',600:'#a9861d'},
+        },
+        fontFamily: { sans: ['Sarabun','sans-serif'], serif: ['"Noto Serif Thai"','Sarabun','serif'] },
+      } }
+    };
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+  <div id="rt-header"></div>
+
+  <main x-data="searchPage()" class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+    <div class="text-center mb-8">
+      <h1 class="rt-serif text-2xl sm:text-3xl font-bold rt-navy-text">🔍 ค้นหาทุกอย่าง</h1>
+      <p class="rt-muted-text text-sm mt-1">ตารางสอบ ตารางสอน และประกาศ/กิจกรรม — ค้นหาจากที่เดียว</p>
+    </div>
+
+    <div class="relative mb-5">
+      <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 rt-muted-text" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.2-3.2"/>
+      </svg>
+      <input type="text" x-model="q" placeholder="พิมพ์คำค้น เช่น ชื่อวิชา รหัสวิชา ห้อง กิจกรรม ทุน…"
+             class="rt-input !pl-12 !py-3.5 !text-base" autofocus>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-6 justify-center">
+      <button @click="type = 'all'" class="rt-chip" :class="type === 'all' ? 'rt-active' : ''">ทั้งหมด</button>
+      <button @click="type = 'exams'" class="rt-chip" :class="type === 'exams' ? 'rt-active' : ''">📅 ตารางสอบ</button>
+      <button @click="type = 'schedule'" class="rt-chip" :class="type === 'schedule' ? 'rt-active' : ''">📚 ตารางสอน</button>
+      <button @click="type = 'posts'" class="rt-chip" :class="type === 'posts' ? 'rt-active' : ''">📰 ประกาศ/กิจกรรม</button>
+    </div>
+
+    <template x-if="loading">
+      <div class="space-y-3"><div class="rt-skeleton h-20"></div><div class="rt-skeleton h-20"></div><div class="rt-skeleton h-20"></div></div>
+    </template>
+
+    <template x-if="!loading && q.trim() === ''">
+      <div class="rt-empty">
+        <p class="text-3xl mb-2">⌨️</p>
+        <p class="font-medium">เริ่มพิมพ์คำค้นเพื่อค้นหาข้อมูลทั้งหมดของสาขา</p>
+      </div>
+    </template>
+
+    <template x-if="!loading && q.trim() !== '' && total === 0">
+      <div class="rt-empty">
+        <p class="text-3xl mb-2">🔍</p>
+        <p class="font-medium">ไม่พบผลลัพธ์สำหรับ "<span x-text="q"></span>"</p>
+        <p class="text-sm mt-1">ลองใช้คำค้นสั้นลง หรือตรวจสอบการสะกดคำ</p>
+      </div>
+    </template>
+
+    <!-- ผลลัพธ์ตารางสอบ -->
+    <section x-show="!loading && q.trim() !== '' && examResults.length > 0" class="mb-8" x-cloak>
+      <h2 class="rt-serif font-bold rt-navy-text text-lg mb-3 flex items-center gap-2">
+        📅 ตารางสอบ <span class="text-xs font-normal rt-muted-text" x-text="examResults.length + ' รายการ'"></span>
+      </h2>
+      <div class="space-y-2">
+        <template x-for="(e, i) in examResults" :key="'e' + i">
+          <a href="exams.html" class="rt-card-plain p-4 flex items-center gap-4 hover:border-[var(--rt-navy)] transition block">
+            <div class="text-center shrink-0 w-16">
+              <p class="text-xs rt-muted-text" x-text="e.date.slice(5, 7) + '/' + e.date.slice(2, 4)"></p>
+              <p class="rt-serif font-bold rt-navy-text text-lg leading-none" x-text="+e.date.slice(8, 10) || '-'"></p>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold rt-navy-text truncate" x-html="hl(e.subject)"></p>
+              <p class="text-sm rt-muted-text" x-text="e.time + ' · ' + (e.room || '-') + ' · กลุ่ม ' + (e.group || '-')"></p>
+            </div>
+            <span class="text-xs font-semibold rounded-full px-2 py-0.5 shrink-0"
+                  :class="e.type === 'กลางภาค' ? 'bg-amber-100 text-amber-700' : (e.type === 'ปลายภาค' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')"
+                  x-text="e.type"></span>
+          </a>
+        </template>
+      </div>
+    </section>
+
+    <!-- ผลลัพธ์ตารางสอน -->
+    <section x-show="!loading && q.trim() !== '' && scheduleResults.length > 0" class="mb-8" x-cloak>
+      <h2 class="rt-serif font-bold rt-navy-text text-lg mb-3 flex items-center gap-2">
+        📚 ตารางสอน <span class="text-xs font-normal rt-muted-text" x-text="scheduleResults.length + ' คาบเรียน'"></span>
+      </h2>
+      <div class="space-y-2">
+        <template x-for="(r, i) in scheduleResults" :key="'s' + i">
+          <a href="schedule.html" class="rt-card-plain p-4 flex items-center gap-4 hover:border-[var(--rt-navy)] transition block">
+            <div class="text-center shrink-0 w-14">
+              <span class="rt-day-badge !w-9 !h-9 !rounded-lg text-sm" x-text="(r.day || '?').slice(0, 1)"></span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold rt-navy-text truncate" x-html="hl(r.subject)"></p>
+              <p class="text-sm rt-muted-text" x-text="rtPadTime(r.timeStart) + ' - ' + rtPadTime(r.timeEnd) + ' · ' + (r.room || '-') + ' · ' + (r.teacher || '-')"></p>
+            </div>
+            <span class="text-xs rt-navy-soft rt-navy-text rounded px-2 py-0.5 font-medium shrink-0" x-text="r.group"></span>
+          </a>
+        </template>
+      </div>
+    </section>
+
+    <!-- ผลลัพธ์โพสต์ -->
+    <section x-show="!loading && q.trim() !== '' && postResults.length > 0" class="mb-8" x-cloak>
+      <h2 class="rt-serif font-bold rt-navy-text text-lg mb-3 flex items-center gap-2">
+        📰 ประกาศ/กิจกรรม <span class="text-xs font-normal rt-muted-text" x-text="postResults.length + ' โพสต์'"></span>
+      </h2>
+      <div class="space-y-2">
+        <template x-for="(p, i) in postResults" :key="'p' + i">
+          <a href="activities.html" class="rt-card-plain p-4 hover:border-[var(--rt-navy)] transition block">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-semibold rounded-full px-2.5 py-0.5 rt-navy-soft rt-navy-text" x-text="p.category || 'ทั่วไป'"></span>
+              <span class="text-xs rt-muted-text ml-auto" x-text="rtThaiDate(p.date)"></span>
+            </div>
+            <p class="font-semibold rt-navy-text" x-html="hl(p.title)"></p>
+            <p class="text-sm rt-muted-text line-clamp-2 mt-0.5" x-html="hl(p.body)"></p>
+          </a>
+        </template>
+      </div>
+    </section>
+  </main>
+
+  <div id="rt-footer"></div>
+
+  <script src="js/ui.js"></script>
+  <script>
+    rtRenderHeader('search');
+    rtRenderFooter();
+
+    function searchPage() {
+      return {
+        loading: true,
+        exams: [],
+        schedule: [],
+        posts: [],
+        q: '',
+        type: 'all',
+        async init() {
+          const params = new URLSearchParams(location.search);
+          if (params.get('q')) this.q = params.get('q');
+          this.apply(await RTData.load());
+          document.addEventListener('rt:updated', e => this.apply(e.detail));
+        },
+        apply(d) {
+          this.exams = d.exams;
+          this.schedule = d.schedule;
+          this.posts = d.posts;
+          this.loading = false;
+        },
+        get query() { return this.q.trim().toLowerCase(); },
+        get examResults() {
+          if (this.type !== 'all' && this.type !== 'exams' || !this.query) return [];
+          const q = this.query;
+          return this.exams.filter(e => (e.subject + ' ' + e.code + ' ' + e.room + ' ' + e.type + ' ' + e.group).toLowerCase().includes(q))
+            .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+        },
+        get scheduleResults() {
+          if (this.type !== 'all' && this.type !== 'schedule' || !this.query) return [];
+          const q = this.query;
+          return this.schedule.filter(r => (r.subject + ' ' + r.code + ' ' + r.room + ' ' + r.teacher + ' ' + r.day + ' ' + r.group).toLowerCase().includes(q)).slice(0, 12);
+        },
+        get postResults() {
+          if (this.type !== 'all' && this.type !== 'posts' || !this.query) return [];
+          const q = this.query;
+          return this.posts.filter(p => (p.title + ' ' + p.body + ' ' + p.category).toLowerCase().includes(q)).slice(0, 12);
+        },
+        get total() { return this.examResults.length + this.scheduleResults.length + this.postResults.length; },
+        hl(text) {
+          const esc = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+          const t = String(text || '');
+          if (!this.q.trim()) return esc(t);
+          const re = new RegExp('(' + this.q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          return esc(t).replace(re, '<mark class="bg-gold-300/60 rounded px-0.5">$1</mark>');
+        },
+      };
+    }
+  </script>
+</body>
+</html>

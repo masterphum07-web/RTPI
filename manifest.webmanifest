@@ -1,0 +1,13 @@
+{
+  "name": "RTPI — ตารางสอบ ตารางสอน สาขาวิชารังสีเทคนิค",
+  "short_name": "RTPI",
+  "description": "ศูนย์รวมตารางสอน ตารางสอบ และข่าวสารกิจกรรม สาขาวิชารังสีเทคนิค วทก.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f2447",
+  "theme_color": "#0f2447",
+  "icons": [
+    { "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

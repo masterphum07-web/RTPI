@@ -4,94 +4,109 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ตารางสอน | สาขาวิชารังสีเทคนิค วทก.</title>
+  <meta name="theme-color" content="#0f2447">
+  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: { extend: {
         colors: {
           navy: {50:'#eef3fb',100:'#d8e3f5',200:'#b3c7e8',600:'#254b85',700:'#1d4076',800:'#16325c',900:'#0f2447'},
-          gold: {400:'#d4af37',500:'#c9a227',600:'#a9861d'},
+          gold: {300:'#e7cf7a',400:'#d4af37',500:'#c9a227',600:'#a9861d'},
         },
-        fontFamily: { sans: ['Sarabun','sans-serif'] },
+        fontFamily: { sans: ['Sarabun','sans-serif'], serif: ['"Noto Serif Thai"','Sarabun','serif'] },
       } }
     };
   </script>
   <link rel="stylesheet" href="css/style.css">
+  <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="js/config.js"></script>
-  <script src="js/sample-data.js"></script>
   <script src="js/data.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
   <div id="rt-header"></div>
 
   <main x-data="schedulePage()" class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
     <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-navy-800">📚 ตารางสอน</h1>
-        <p class="text-slate-500 text-sm mt-1">ตารางเรียนรายสัปดาห์ แยกตามปีการศึกษา ภาคเรียน และกลุ่มเรียน</p>
+        <h1 class="rt-serif text-2xl sm:text-3xl font-bold rt-navy-text">📚 ตารางสอน</h1>
+        <p class="rt-muted-text text-sm mt-1">ตารางเรียนรายสัปดาห์ แยกตามปีการศึกษา ภาคเรียน และกลุ่มเรียน</p>
       </div>
-      <button onclick="window.print()" class="rt-noprint text-sm border border-slate-300 hover:border-navy-500 rounded-lg px-4 py-2 font-medium transition">🖨 พิมพ์ตาราง</button>
+      <button onclick="window.print()" class="rt-btn rt-btn-ghost rt-noprint">🖨 พิมพ์ตาราง</button>
     </div>
 
-    <!-- ตัวกรอง -->
-    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-5 rt-noprint">
+    <!-- ตัวกรอง + มุมมอง -->
+    <div class="rt-card p-4 mb-5 rt-noprint">
       <div class="grid gap-3 sm:grid-cols-3">
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">ปีการศึกษา</label>
-          <select x-model="year" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-200">
+          <label class="block text-xs font-semibold rt-muted-text mb-1">ปีการศึกษา</label>
+          <select x-model="year" class="rt-select">
             <option value="">ทั้งหมด</option>
             <template x-for="y in years" :key="y"><option :value="y" x-text="y"></option></template>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">ภาคเรียน</label>
-          <select x-model="term" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-200">
+          <label class="block text-xs font-semibold rt-muted-text mb-1">ภาคเรียน</label>
+          <select x-model="term" class="rt-select">
             <option value="">ทั้งหมด</option>
             <template x-for="t in terms" :key="t"><option :value="t" x-text="t"></option></template>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-500 mb-1">กลุ่มเรียน</label>
-          <select x-model="group" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-navy-200">
+          <label class="block text-xs font-semibold rt-muted-text mb-1">กลุ่มเรียน</label>
+          <select x-model="group" class="rt-select">
             <option value="">ทุกกลุ่ม</option>
             <template x-for="g in groups" :key="g"><option :value="g" x-text="g"></option></template>
           </select>
         </div>
       </div>
+      <div class="flex flex-wrap gap-2 mt-3 items-center">
+        <span class="text-xs font-semibold rt-muted-text mr-1">มุมมอง:</span>
+        <button @click="view = 'list'" class="rt-chip" :class="view === 'list' ? 'rt-active' : ''">☰ รายวัน</button>
+        <button @click="view = 'grid'" class="rt-chip" :class="view === 'grid' ? 'rt-active' : ''">▦ ตารางรายสัปดาห์</button>
+      </div>
     </div>
 
-    <!-- ตารางรายวัน -->
-    <div x-show="loading" class="text-slate-400 py-10 text-center">กำลังโหลดข้อมูล…</div>
-    <div x-show="!loading && byDay.length === 0" class="bg-white rounded-xl border border-slate-200 text-slate-400 py-10 text-center">ไม่พบตารางสอนตามเงื่อนไขที่เลือก</div>
+    <template x-if="loading">
+      <div class="space-y-4"><div class="rt-skeleton h-24"></div><div class="rt-skeleton h-24"></div><div class="rt-skeleton h-24"></div></div>
+    </template>
 
-    <div class="space-y-5">
+    <template x-if="!loading && filtered.length === 0">
+      <div class="rt-empty">
+        <p class="text-3xl mb-2">📖</p>
+        <p class="font-medium">ไม่พบตารางสอนตามเงื่อนไขที่เลือก</p>
+        <p class="text-sm mt-1">เพิ่มข้อมูลได้ที่แท็บ <b>Schedule</b> ใน Google Sheets ของสาขา</p>
+      </div>
+    </template>
+
+    <!-- ════════ มุมมองรายวัน ════════ -->
+    <div x-show="!loading && view === 'list' && filtered.length > 0" class="space-y-5">
       <template x-for="[day, rows] in byDay" :key="day">
-        <section class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div class="bg-navy-50 border-b border-slate-200 px-5 py-3 flex items-center gap-3">
+        <section class="rt-card overflow-hidden">
+          <div class="rt-navy-soft border-b border-[var(--rt-border)] px-5 py-3 flex items-center gap-3">
             <span class="rt-day-badge" x-text="day.slice(0, 1)"></span>
             <div>
-              <h2 class="font-bold text-navy-800" x-text="'วัน' + day"></h2>
-              <p class="text-xs text-slate-500" x-text="rows.length + ' คาบเรียน'"></p>
+              <h2 class="rt-serif font-bold rt-navy-text" x-text="'วัน' + day"></h2>
+              <p class="text-xs rt-muted-text" x-text="rows.length + ' คาบเรียน'"></p>
             </div>
           </div>
           <div class="overflow-x-auto">
             <table class="rt-table">
-              <thead>
-                <tr><th>เวลา</th><th>รหัสวิชา</th><th>รายวิชา</th><th>ห้อง</th><th>อาจารย์ผู้สอน</th><th>กลุ่มเรียน</th></tr>
-              </thead>
+              <thead><tr><th>เวลา</th><th>รหัสวิชา</th><th>รายวิชา</th><th>ห้อง</th><th>อาจารย์ผู้สอน</th><th>กลุ่มเรียน</th></tr></thead>
               <tbody>
                 <template x-for="(r, i) in rows" :key="i">
                   <tr>
-                    <td class="whitespace-nowrap font-semibold text-navy-800" x-text="r.timeStart + ' - ' + r.timeEnd"></td>
-                    <td class="whitespace-nowrap text-slate-500" x-text="r.code"></td>
+                    <td class="whitespace-nowrap font-semibold rt-navy-text" x-text="rtPadTime(r.timeStart) + ' - ' + rtPadTime(r.timeEnd)"></td>
+                    <td class="whitespace-nowrap rt-muted-text" x-text="r.code"></td>
                     <td x-text="r.subject"></td>
                     <td x-text="r.room"></td>
                     <td x-text="r.teacher"></td>
-                    <td><span class="text-xs bg-navy-50 text-navy-700 rounded px-2 py-0.5 font-medium whitespace-nowrap" x-text="r.group"></span></td>
+                    <td><span class="text-xs rt-navy-soft rt-navy-text rounded px-2 py-0.5 font-medium whitespace-nowrap" x-text="r.group"></span></td>
                   </tr>
                 </template>
               </tbody>
@@ -100,7 +115,34 @@
         </section>
       </template>
     </div>
-    <p class="text-xs text-slate-400 mt-3">แสดง <span x-text="filtered.length"></span> คาบเรียน · ข้อมูลอัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
+
+    <!-- ════════ มุมมองตารางรายสัปดาห์ ════════ -->
+    <div x-show="!loading && view === 'grid' && filtered.length > 0" x-cloak>
+      <div class="rt-card overflow-hidden">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-[var(--rt-border)]">
+          <template x-for="[day, rows] in byDay" :key="day">
+            <div class="min-w-0">
+              <div class="bg-[var(--rt-navy)] text-white px-3 py-2.5 flex items-center gap-2">
+                <span class="w-6 h-6 rounded bg-white/15 text-[13px] font-bold flex items-center justify-center" x-text="day.slice(0, 1)"></span>
+                <span class="font-semibold text-sm" x-text="day"></span>
+              </div>
+              <div class="p-2 space-y-2 min-h-[6rem]">
+                <template x-for="(r, i) in rows" :key="i">
+                  <div class="rounded-lg border border-[var(--rt-border)] bg-[var(--rt-surface-2)] p-2.5 text-sm">
+                    <p class="text-[13px] font-bold rt-navy-text" x-text="rtPadTime(r.timeStart) + ' - ' + rtPadTime(r.timeEnd)"></p>
+                    <p class="font-medium leading-snug mt-0.5" x-text="r.subject"></p>
+                    <p class="rt-muted-text text-xs mt-1" x-text="r.room + (r.teacher ? ' · ' + r.teacher : '')"></p>
+                    <p class="mt-1.5"><span class="text-[11px] rt-navy-soft rt-navy-text rounded px-1.5 py-0.5 font-medium" x-text="r.group"></span></p>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-xs rt-muted-text mt-3" x-show="!loading">แสดง <span x-text="filtered.length"></span> คาบเรียน · อัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
   </main>
 
   <div id="rt-footer"></div>
@@ -114,6 +156,7 @@
       const DAY_ORDER = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
       return {
         loading: true,
+        view: 'list',
         cfg: {},
         schedule: [],
         year: '',
@@ -143,7 +186,7 @@
             )
             .sort((a, b) =>
               DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) ||
-              (a.timeStart || '').localeCompare(b.timeStart || '')
+              rtPadTime(a.timeStart).localeCompare(rtPadTime(b.timeStart))
             );
         },
         get byDay() {
