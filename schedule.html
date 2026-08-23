@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ตารางสอน | สาขาวิชารังสีเทคนิค วทก.</title>
   <meta name="theme-color" content="#0f2447">
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="icon" type="image/png" href="icons/logo-dept.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +22,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=3"></script>
-  <script src="js/data.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/data.js?v=4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -37,7 +37,7 @@
         <h1 class="rt-serif text-2xl sm:text-3xl font-bold rt-navy-text">📚 ตารางสอน</h1>
         <p class="rt-muted-text text-sm mt-1">ตารางเรียนรายสัปดาห์ แยกตามปีการศึกษา ภาคเรียน และกลุ่มเรียน</p>
       </div>
-      <button onclick="window.print()" class="rt-btn rt-btn-ghost rt-noprint">🖨 พิมพ์ตาราง</button>
+      <button onclick="window.print()" x-show="view !== 'images'" class="rt-btn rt-btn-ghost rt-noprint">🖨 พิมพ์ตาราง</button>
     </div>
 
     <!-- ตัวกรอง + มุมมอง -->
@@ -69,6 +69,7 @@
         <span class="text-xs font-semibold rt-muted-text mr-1">มุมมอง:</span>
         <button @click="view = 'list'" class="rt-chip" :class="view === 'list' ? 'rt-active' : ''">☰ รายวัน</button>
         <button @click="view = 'grid'" class="rt-chip" :class="view === 'grid' ? 'rt-active' : ''">▦ ตารางรายสัปดาห์</button>
+        <button @click="view = 'images'" class="rt-chip" :class="view === 'images' ? 'rt-active' : ''">🖼 รูปตารางสอน</button>
       </div>
     </div>
 
@@ -142,12 +143,41 @@
       </div>
     </div>
 
-    <p class="text-xs rt-muted-text mt-3" x-show="!loading">แสดง <span x-text="filtered.length"></span> คาบเรียน · อัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
+    <!-- ════════ มุมมองรูปตารางสอน ════════ -->
+    <div x-show="!loading && view === 'images'" x-cloak>
+      <template x-if="images.length === 0">
+        <div class="rt-empty">
+          <p class="text-3xl mb-2">🖼</p>
+          <p class="font-medium">ยังไม่มีรูปตารางสอน</p>
+          <p class="text-sm mt-2 leading-relaxed">
+            ผู้ดูแลสามารถอัปโหลดรูปตารางสอนได้ที่ <a href="admin.html" class="underline rt-navy-text font-medium">ระบบผู้ดูแล</a><br>
+            หรือเพิ่มลิงก์รูปในแท็บ <b>Images</b> ของ Google Sheets (รองรับลิงก์ Google Drive)
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <template x-for="im in images" :key="im.image + im.title">
+          <figure class="rt-card overflow-hidden hover:-translate-y-0.5 transition-all">
+            <div class="bg-[var(--rt-surface-2)] border-b border-[var(--rt-border)] cursor-zoom-in"
+                 @click="rtOpenLightbox(rtDirectImage(im.image), im.title)">
+              <img :src="rtDirectImage(im.image)" :alt="im.title" class="w-full max-h-72 object-contain" loading="lazy">
+            </div>
+            <figcaption class="p-4 flex items-center gap-2 flex-wrap">
+              <p class="font-semibold rt-navy-text flex-1 min-w-[8rem]" x-text="im.title || 'ตารางสอน'"></p>
+              <span class="text-xs rt-navy-soft rt-navy-text rounded-full px-2.5 py-1 font-medium" x-text="(im.term || '') + ' ปี ' + (im.year || '')"></span>
+              <span class="text-xs rt-muted-text" x-text="rtThaiDate(im.date)"></span>
+            </figcaption>
+          </figure>
+        </template>
+      </div>
+    </div>
+
+    <p class="text-xs rt-muted-text mt-3" x-show="!loading && view !== 'images'">แสดง <span x-text="filtered.length"></span> คาบเรียน · อัปเดตอัตโนมัติทุก <span x-text="RT_CONFIG.POLL_SECONDS"></span> วินาที</p>
   </main>
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=3"></script>
+  <script src="js/ui.js?v=4"></script>
   <script>
     rtRenderHeader('schedule');
     rtRenderFooter();
@@ -159,6 +189,7 @@
         view: 'list',
         cfg: {},
         schedule: [],
+        images: [],
         year: '',
         term: '',
         group: '',
@@ -169,6 +200,9 @@
         apply(d) {
           this.cfg = d.config;
           this.schedule = d.schedule;
+          this.images = [...(d.images || [])]
+            .filter(im => im.category === 'ตารางสอน')
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           if (!this.year && d.config.currentYear && d.schedule.some(r => r.year === d.config.currentYear)) {
             this.year = d.config.currentYear;
           }

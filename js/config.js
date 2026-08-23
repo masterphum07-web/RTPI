@@ -1,17 +1,13 @@
 /* ─────────────────────────────────────────────
  * RTPI — ไฟล์ตั้งค่าหลักของเว็บ
  * ─────────────────────────────────────────────
- * โหมด A (ใช้อยู่): ใส่ SHEET_ID ของ Google Sheets
- *   เว็บจะดึงข้อมูลจากชีตตรง ๆ (ชีตต้องแชร์เป็น "ทุกคนที่มีลิงก์ – ผู้ดู")
- *
- * โหมด B (ทางเลือก): ใส่ SHEET_URL จาก Apps Script (Deploy > Web app)
- *   เหมาะเมื่อต้องการ cache ฝั่งเซิร์ฟเวอร์ — ถ้าใส่ทั้งคู่จะใช้โหมด B
- *
- * แท็บที่เว็บอ่าน: Schedule, Exams, Posts, ExamImages, Config
+ * SHEET_ID  : ใช้อ่านข้อมูลจากชีตตรง ๆ (ชีตแชร์ "ทุกคนที่มีลิงก์ – ผู้ดู")
+ * SCRIPT_URL: ใช้สำหรับหน้าแอดมิน (อัปโหลดรูป/เพิ่มข้อมูล)
+ *             คือ URL Web app จาก Deploy ของ Apps Script (ลงท้าย /exec)
  */
 const RT_CONFIG = {
   SHEET_ID: '15Rwiuwwi7GF-SA2Rr2SY3xtNwxQTCBbzJhHbMi2RVsI',
-  SHEET_URL: '',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxeJ2QVm2Lynu2SB_JvIaBJHixz9sLahRlplD9PpTYJiU2YEgSzjFoy0TsX522o_n3D/exec',
 
   // ระยะเวลาดึงข้อมูลใหม่ (วินาที)
   POLL_SECONDS: 60,

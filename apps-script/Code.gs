@@ -1,19 +1,24 @@
 /*************************************************************
  * RTPI — Google Apps Script สำหรับ Google Sheets
- * เว็บไซต์รวมตารางสอบ/ตารางสอน สาขาวิชารังสีเทคนิค วทก.
+ * เว็บไซต์รวมตารางสอบ/ตารางสอน สาขาวิชารังสีเทคนิค
+ * วิทยาลัยเทคโนโลยีทางการแพทย์และสาธารณสุข กาญจนาภิเษก (วทก.)
  *
- * วิธีใช้งาน (ทำครั้งแรกครั้งเดียว):
- *  1) สร้าง Google Sheets ใหม่
- *  2) เมนู Extensions > Apps Script แล้ววางโค้ดนี้ทับของเดิมทั้งหมด กดบันทึก
- *  3) เลือกฟังก์ชัน "setupSheets" แล้วกด Run (ครั้งแรกจะขอสิทธิ์ กด Review permissions > Allow)
- *     → ชีตจะถูกสร้างเป็นแท็บ Schedule / Exams / Posts / Config พร้อมหัวตารางและข้อมูลตัวอย่าง
- *  4) (ทำเมื่อจะเชื่อมกับเว็บ) Deploy > New deployment > ประเภท Web app
- *     - Execute as: Me
- *     - Who has access: Anyone
- *     แล้วก็อป URL ที่ลงท้ายด้วย /exec ไปใส่ใน js/config.js > SHEET_URL
+ * ★ วิธีอัปเกรดจากรุ่นก่อน (สำคัญ — ทำครั้งเดียว):
+ *  1) เปิด Google Sheets ของสาขา → Extensions > Apps Script
+ *  2) วางโค้ดนี้ทับของเดิมทั้งหมด → บันทึก
+ *  3) รันฟังก์ชัน setupSheets อีกครั้ง
+ *     (จะสร้างแท็บ Images ใหม่ + ย้ายข้อมูลเดิม + แก้ชื่อวิทยาลัยให้อัตโนมัติ)
+ *  4) Deploy > Manage deployments > ดินสอ (Edit) > Version: New version
+ *     > Deploy  ← ใช้วิธีนี้ URL จะเท่าเดิม ไม่ต้องแก้ที่เว็บ
  *
- * หลังจากนั้นทุกครั้งที่แก้ข้อมูลในชีต เว็บจะดึงข้อมูลใหม่เองโดยอัตโนมัติ
+ * ตั้งครั้งแรก (ยังไม่เคยวางโค้ด): ทำข้อ 2-4 และข้ามการย้ายข้อมูล
  *************************************************************/
+
+/* ── รหัสผ่านแอดมิน (ใช้อัปโหลดรูป/เพิ่มข้อมูลผ่านหน้าเว็บ /admin.html) ── */
+const ADMIN_PASS = '12345';
+
+/* โฟลเดอร์ Drive ที่เก็บรูปที่อัปโหลด */
+const UPLOAD_FOLDER = 'RTPI-Uploads';
 
 /* ── นิยามโครงสร้างแท็บ: หัวตารางภาษาไทย ↔ คีย์ JSON ที่เว็บใช้ ── */
 const RT_SHEET_DEFS = [
@@ -34,9 +39,6 @@ const RT_SHEET_DEFS = [
     ],
     samples: [
       ['2569', 'ภาคเรียนที่ 1', 'R1/1', 'จันทร์', '08:30', '10:30', '401101', 'กายวิภาคศาสตร์และสรีรวิทยา', 'ห้องบรรยาย 201', 'อาจารย์สมชาย ใจดี'],
-      ['2569', 'ภาคเรียนที่ 1', 'R1/1', 'จันทร์', '13:00', '16:00', '401103', 'ฟิสิกส์การแพทย์', 'ห้องปฏิบัติการฟิสิกส์', 'อาจารย์สมหญิง รักงาน'],
-      ['2569', 'ภาคเรียนที่ 1', 'R1/1', 'อังคาร', '08:30', '11:30', '401105', 'เทคนิครังสีวิทยาพื้นฐาน', 'ห้องเรียนรังสี 1', 'อาจารย์ปิยะพร สอนดี'],
-      ['2569', 'ภาคเรียนที่ 1', 'R2/1', 'จันทร์', '08:30', '11:30', '402201', 'เทคนิครังสีวิทยาทรวงกลาง', 'ห้องเรียนรังสี 2', 'อาจารย์ปิยะพร สอนดี'],
     ],
   },
   {
@@ -56,24 +58,21 @@ const RT_SHEET_DEFS = [
     ],
     samples: [
       ['2569', 'ภาคเรียนที่ 1', 'กลางภาค', '401101', 'กายวิภาคศาสตร์และสรีรวิทยา', 'R1/1', new Date(2026, 8, 21), '09:00-12:00', 'ห้องสอบ A', ''],
-      ['2569', 'ภาคเรียนที่ 1', 'กลางภาค', '401103', 'ฟิสิกส์การแพทย์', 'R1/1', new Date(2026, 8, 23), '09:00-12:00', 'ห้องสอบ A', ''],
-      ['2569', 'ภาคเรียนที่ 1', 'ปลายภาค', '401101', 'กายวิภาคศาสตร์และสรีรวิทยา', 'R1/1', new Date(2026, 10, 30), '09:00-12:00', 'ห้องสอบ A', ''],
     ],
   },
   {
-    name: 'ExamImages',
+    name: 'Images',
     color: '#8a6d14',
     headers: [
+      { th: 'หมวดหมู่', key: 'category', list: ['ตารางสอน', 'ตารางสอบ', 'อื่น ๆ'] },
       { th: 'ปีการศึกษา', key: 'year' },
       { th: 'ภาคเรียน', key: 'term', list: ['ภาคเรียนที่ 1', 'ภาคเรียนที่ 2', 'ภาคฤดูร้อน'] },
-      { th: 'ประเภทการสอบ', key: 'type', list: ['กลางภาค', 'ปลายภาค', 'สอบเก็บ', 'อื่น ๆ'] },
       { th: 'ชื่อรูป/คำอธิบาย', key: 'title' },
       { th: 'ลิงก์รูปภาพ', key: 'image' },
       { th: 'วันที่เผยแพร่', key: 'date', isDate: true },
+      { th: 'ผู้อัพโหลด', key: 'author' },
     ],
-    samples: [
-      ['2569', 'ภาคเรียนที่ 1', 'กลางภาค', 'ตัวอย่าง: ตารางสอบกลางภาค 1/2569', 'https://drive.google.com/file/d/ใส่ไอดีไฟล์ที่นี่/view', new Date(2026, 8, 1)],
-    ],
+    samples: [],
   },
   {
     name: 'Posts',
@@ -90,8 +89,7 @@ const RT_SHEET_DEFS = [
       { th: 'ปักหมุด', key: 'pinned', list: ['TRUE', 'FALSE'] },
     ],
     samples: [
-      ['P001', 'ยินดีต้อนรับนักศึกษาใหม่ รุ่นที่ 20', 'ประกาศทั่วไป', 'ยินดีต้อนรับน้องปี 1 ทุกคนเข้าสู่สาขาวิชารังสีเทคนิค ติดตามประกาศผ่านเว็บไซต์นี้ได้เลย', '', '', 'ฝ่ายวิชาการ', new Date(2026, 7, 10), 'TRUE'],
-      ['P002', 'กิจกรรม R-Camp เชิงปฏิบัติการ', 'กิจกรรม', 'สมาคมนักศึกษาจัดกิจกรรม R-Camp วันที่ 26-27 กันยายน 2569 รับสมัคร 60 คนแรก', '', '', 'สโมสรนักศึกษา', new Date(2026, 7, 18), 'FALSE'],
+      ['P001', 'ยินดีต้อนรับนักศึกษาใหม่', 'ประกาศทั่วไป', 'ติดตามประกาศผ่านเว็บไซต์นี้ได้เลย', '', '', 'ฝ่ายวิชาการ', new Date(2026, 7, 10), 'FALSE'],
     ],
   },
   {
@@ -103,10 +101,10 @@ const RT_SHEET_DEFS = [
     ],
     samples: [
       ['siteName', 'สาขาวิชารังสีเทคนิค'],
-      ['siteFullName', 'สาขาวิชาเทคนิคการแพทย์รังสี วิทยาลัยพระบรมราชชนก (วทก.)'],
+      ['siteFullName', 'สาขาวิชาเทคนิคการแพทย์รังสี วิทยาลัยเทคโนโลยีทางการแพทย์และสาธารณสุข กาญจนาภิเษก (วทก.)'],
       ['currentYear', '2569'],
       ['currentTerm', 'ภาคเรียนที่ 1'],
-      ['announcement', 'ประกาศ! ตารางสอบกลางภาค 1/2569 ประกาศแล้ว ตรวจสอบได้ที่เมนูตารางสอบ'],
+      ['announcement', ''],
       ['lineUrl', ''],
       ['facebookUrl', ''],
       ['contactName', 'ฝ่ายวิชาการ สภานักศึกษา'],
@@ -114,77 +112,97 @@ const RT_SHEET_DEFS = [
   },
 ];
 
-const RT_CACHE_SEC = 60; // เก็บ cache ผลลัพธ์ JSON ไว้ 60 วินาที กันเรียกเกินโควตา
+const RT_CACHE_SEC = 60;
 
 /*************************************************************
- * setupSheets — สร้างแท็บทั้ง 4 พร้อมหัวตาราง/รูปแบบ/ตัวอย่าง
- * รันครั้งเดียวตอนตั้งค่า (หรือกดเมนู "RTPI > ตั้งค่าชีต" ในสเปรดชีต)
+ * setupSheets — สร้าง/อัปเดตแท็บทั้งหมด + ย้ายข้อมูลรุ่นเก่า
  *************************************************************/
 function setupSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const defs = RT_SHEET_DEFS;
 
-  defs.forEach(function (def) {
+  migrateExamImages_(ss);
+  migrateConfig_(ss);
+
+  RT_SHEET_DEFS.forEach(function (def) {
     let sheet = ss.getSheetByName(def.name);
     if (!sheet) sheet = ss.insertSheet(def.name);
     sheet.setTabColor(def.color);
 
-    // หัวตาราง
     const nCols = def.headers.length;
     sheet.getRange(1, 1, 1, nCols).setValues([def.headers.map(function (h) { return h.th; })])
-      .setFontWeight('bold')
-      .setBackground('#16325c')
-      .setFontColor('#ffffff')
+      .setFontWeight('bold').setBackground('#16325c').setFontColor('#ffffff')
       .setVerticalAlignment('middle');
     sheet.setFrozenRows(1);
     sheet.setRowHeight(1, 32);
 
-    // คอลัมน์วันที่ → บังคับรูปแบบ yyyy-mm-dd
     def.headers.forEach(function (h, i) {
       if (h.isDate) {
         sheet.getRange(2, i + 1, sheet.getMaxRows() - 1, 1).setNumberFormat('yyyy-mm-dd');
       }
-    });
-
-    // รายการแบบเลือกจากรายการ (dropdown) ป้องกันพิมพ์ผิด
-    def.headers.forEach(function (h, i) {
       if (h.list) {
         const rule = SpreadsheetApp.newDataValidation().requireValueInList(h.list, true).setAllowInvalid(false).build();
         sheet.getRange(2, i + 1, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
       }
     });
 
-    // ใส่ข้อมูลตัวอย่างเมื่อชีตยังว่าง
-    if (sheet.getLastRow() < 2 && def.samples) {
+    if (sheet.getLastRow() < 2 && def.samples && def.samples.length) {
       sheet.getRange(2, 1, def.samples.length, nCols).setValues(def.samples);
     }
 
-    // ปรับความกว้างคอลัมน์ให้อ่านง่าย
     for (let c = 1; c <= nCols; c++) sheet.autoResizeColumn(c);
   });
 
-  // ลบแท็บเริ่มต้นที่ว่างออก
-  const first = ss.getSheets()[0];
-  if (first && first.getLastRow() === 0 && defs.indexOf(defs.filter(function (d) { return d.name === first.getName(); })[0]) === -1) {
-    ss.deleteSheet(first);
-  }
-
-  // สร้างเมนูให้รันจากในสเปรดชีตได้
   try {
     SpreadsheetApp.getUi()
       .createMenu('⚙️ RTPI')
       .addItem('ตั้งค่าชีต (สร้างแท็บ/หัวตาราง)', 'setupSheets')
       .addItem('ล้าง cache ข้อมูลเว็บ', 'clearCache')
       .addToUi();
-  } catch (e) { /* รันจาก editor ไม่มี UI — ข้ามได้ */ }
+  } catch (e) { /* รันจาก editor ไม่มี UI */ }
 
   Logger.log('ตั้งค่าชีตเรียบร้อย');
 }
 
+/* ย้ายแท็บ ExamImages รุ่นเก่า (ถ้ามี) มาเป็น Images — เก็บรูปจริงไว้ทั้งหมด */
+function migrateExamImages_(ss) {
+  const old = ss.getSheetByName('ExamImages');
+  const existing = ss.getSheetByName('Images');
+  if (!old || existing) return;
+
+  let carried = [];
+  if (old.getLastRow() > 1) {
+    const vals = old.getRange(2, 1, old.getLastRow() - 1, old.getLastColumn()).getValues();
+    carried = vals
+      .filter(function (r) { return String(r[4] || '').indexOf('http') === 0 && String(r[4]).indexOf('ใส่ไอดี') === -1; })
+      .map(function (r) {
+        return ['ตารางสอบ', String(r[0] || ''), String(r[1] || ''), String(r[3] || ''), String(r[4]),
+                r[5] instanceof Date ? r[5] : new Date(), 'ระบบเดิม'];
+      });
+  }
+  ss.deleteSheet(old);
+  if (carried.length) {
+    let sheet = ss.getSheetByName('Images');
+    if (!sheet) sheet = ss.insertSheet('Images');
+    sheet.getRange(2, 1, carried.length, 7).setValues(carried);
+  }
+}
+
+/* แก้ชื่อวิทยาลัยที่ตั้งผิดตอนแรก (พระบรมราชชนก → วทก. กาญจนาภิเษก) */
+function migrateConfig_(ss) {
+  const sheet = ss.getSheetByName('Config');
+  if (!sheet || sheet.getLastRow() < 2) return;
+  const vals = sheet.getDataRange().getValues();
+  const correct = 'สาขาวิชาเทคนิคการแพทย์รังสี วิทยาลัยเทคโนโลยีทางการแพทย์และสาธารณสุข กาญจนาภิเษก (วทก.)';
+  for (let i = 1; i < vals.length; i++) {
+    if (vals[i][0] === 'siteFullName' && String(vals[i][1] || '').indexOf('พระบรมราชชนก') !== -1) {
+      sheet.getRange(i + 1, 2).setValue(correct);
+    }
+  }
+}
+
 /*************************************************************
- * doGet — ให้เว็บเรียกดึงข้อมูลเป็น JSON
- *   ทั้งหมด:        <URL>/exec
- *   เฉพาะแท็บ:      <URL>/exec?sheet=exams   (schedule|exams|posts|config)
+ * doGet — ให้เว็บอ่านข้อมูลเป็น JSON
+ *   ทั้งหมด: <URL>/exec   |  เฉพาะแท็บ: ?sheet=images
  *************************************************************/
 function doGet(e) {
   const want = (e && e.parameter && e.parameter.sheet) ? String(e.parameter.sheet).toLowerCase() : 'all';
@@ -196,47 +214,161 @@ function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const payload = { ok: true, updated: new Date().toISOString() };
 
-  function sheetRows(sheetName) {
-    const def = RT_SHEET_DEFS.filter(function (d) { return d.name.toLowerCase() === sheetName.toLowerCase(); })[0];
-    const sheet = ss.getSheetByName(def.name);
-    if (!sheet || sheet.getLastRow() < 2) return [];
-    const values = sheet.getDataRange().getValues();
-    const headers = values[0];
-    const out = [];
-    for (let r = 1; r < values.length; r++) {
-      const row = values[r];
-      if (row.join('') === '') continue; // ข้ามแถวว่าง
-      const obj = {};
-      def.headers.forEach(function (h, c) {
-        let v = row[c];
-        if (v instanceof Date) v = Utilities.formatDate(v, Session.getScriptTimeZone(), h.isDate ? 'yyyy-MM-dd' : 'HH:mm');
-        obj[h.key] = v === null ? '' : v;
-      });
-      out.push(obj);
-    }
-    return out;
-  }
-
   if (want === 'config') {
-    payload.config = rowsToConfig(sheetRows('Config'));
-  } else if (want === 'schedule' || want === 'exams' || want === 'posts' || want === 'examimages') {
-    payload[want] = sheetRows(defName(want));
+    payload.config = rowsToConfig(sheetRows(ss, 'Config'));
+  } else if (['schedule', 'exams', 'images', 'posts'].indexOf(want) !== -1) {
+    payload[want] = sheetRows(ss, defName(want));
   } else {
-    payload.config = rowsToConfig(sheetRows('Config'));
-    payload.schedule = sheetRows('Schedule');
-    payload.exams = sheetRows('Exams');
-    payload.examImages = sheetRows('ExamImages');
-    payload.posts = sheetRows('Posts');
+    payload.config = rowsToConfig(sheetRows(ss, 'Config'));
+    payload.schedule = sheetRows(ss, 'Schedule');
+    payload.exams = sheetRows(ss, 'Exams');
+    payload.images = sheetRows(ss, 'Images');
+    payload.posts = sheetRows(ss, 'Posts');
   }
 
   const json = JSON.stringify(payload);
-  try { cache.put(cacheKey, json, RT_CACHE_SEC); } catch (err) { /* ข้อมูลใหญ่เกิน cache ก็ปล่อยผ่าน */ }
+  try { cache.put(cacheKey, json, RT_CACHE_SEC); } catch (err) {}
   return jsonOut(payload);
 }
 
+/*************************************************************
+ * doPost — API สำหรับหน้าแอดมินของเว็บ (admin.html)
+ * ส่งเป็น JSON: { action, password, ... }
+ *   ping        — ตรวจรหัสผ่าน
+ *   uploadImage — อัปโหลดรูป (base64) ขึ้น Drive + บันทึกแถวใน Images
+ *   deleteImage — ลบรูป (ลบแถว + ทิ้งไฟล์ใน Drive)
+ *   addRows     — เพิ่มแถวข้อมูลลง Schedule / Exams / Posts
+ *************************************************************/
+function doPost(e) {
+  let body = {};
+  try {
+    body = JSON.parse(e.postData.contents || '{}');
+  } catch (err) {
+    return jsonOut({ ok: false, error: 'รูปแบบคำขอไม่ถูกต้อง' });
+  }
+
+  if (String(body.password || '') !== ADMIN_PASS) {
+    return jsonOut({ ok: false, error: 'รหัสผ่านไม่ถูกต้อง' });
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  try {
+    switch (String(body.action || '')) {
+      case 'ping':
+        return jsonOut({ ok: true });
+
+      case 'uploadImage': {
+        const folder = getUploadFolder_();
+        const blob = Utilities.newBlob(
+          Utilities.base64Decode(String(body.base64 || '')),
+          String(body.mimeType || 'image/jpeg'),
+          String(body.fileName || ('upload-' + Date.now() + '.jpg'))
+        );
+        const file = folder.createFile(blob);
+        try {
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        } catch (shErr) {
+          return jsonOut({ ok: false, error: 'ตั้งค่าการแชร์ไฟล์ไม่สำเร็จ: ' + shErr.message });
+        }
+        const url = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+
+        const sheet = ss.getSheetByName('Images');
+        if (!sheet) return jsonOut({ ok: false, error: 'ไม่พบแท็บ Images — รัน setupSheets ก่อน' });
+        sheet.appendRow([
+          String(body.category || 'อื่น ๆ'),
+          String(body.year || ''),
+          String(body.term || ''),
+          String(body.title || ''),
+          url,
+          new Date(),
+          String(body.author || 'แอดมิน'),
+        ]);
+        return jsonOut({ ok: true, url: url, fileId: file.getId() });
+      }
+
+      case 'deleteImage': {
+        const url = String(body.url || '');
+        if (!url) return jsonOut({ ok: false, error: 'ไม่ได้ระบุรูป' });
+        const sheet = ss.getSheetByName('Images');
+        if (!sheet || sheet.getLastRow() < 2) return jsonOut({ ok: false, error: 'ไม่พบข้อมูลรูป' });
+        const vals = sheet.getDataRange().getValues();
+        let removed = false;
+        for (let i = vals.length - 1; i >= 1; i--) {
+          if (String(vals[i][4] || '') === url) {
+            sheet.deleteRow(i + 1);
+            removed = true;
+          }
+        }
+        const m = url.match(/[?&]id=([\w-]{15,})/);
+        if (m) { try { DriveApp.getFileById(m[1]).setTrashed(true); } catch (dErr) {} }
+        return jsonOut({ ok: removed, error: removed ? '' : 'ไม่พบรูปนี้ในชีต' });
+      }
+
+      case 'addRows': {
+        const target = defName(String(body.sheet || '').toLowerCase());
+        const def = RT_SHEET_DEFS.filter(function (d) { return d.name === target; })[0];
+        if (!def || target === 'Config' || target === 'Images') {
+          return jsonOut({ ok: false, error: 'เป้าหมายไม่ถูกต้อง (ใช้ Schedule / Exams / Posts)' });
+        }
+        const rows = body.rows;
+        if (!Array.isArray(rows) || !rows.length) return jsonOut({ ok: false, error: 'ไม่มีข้อมูลแถว' });
+        const sheet = ss.getSheetByName(def.name);
+        if (!sheet) return jsonOut({ ok: false, error: 'ไม่พบแท็บ ' + def.name });
+        const norm = rows.map(function (r) {
+          return def.headers.map(function (h, c) {
+            let v = r[c] === undefined || r[c] === null ? '' : r[c];
+            if (h.isDate && !(v instanceof Date)) {
+              const s = String(v).trim();
+              if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                const p = s.split('-');
+                return new Date(+p[0], +p[1] - 1, +p[2]);
+              }
+            }
+            return v;
+          });
+        });
+        sheet.getRange(sheet.getLastRow() + 1, 1, norm.length, def.headers.length).setValues(norm);
+        return jsonOut({ ok: true, added: norm.length });
+      }
+
+      default:
+        return jsonOut({ ok: false, error: 'ไม่รู้จัก action: ' + body.action });
+    }
+  } catch (err) {
+    return jsonOut({ ok: false, error: err.message });
+  }
+}
+
+function getUploadFolder_() {
+  const it = DriveApp.getFoldersByName(UPLOAD_FOLDER);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(UPLOAD_FOLDER);
+}
+
 function defName(lower) {
-  const map = { schedule: 'Schedule', exams: 'Exams', posts: 'Posts', examimages: 'ExamImages' };
+  const map = { schedule: 'Schedule', exams: 'Exams', posts: 'Posts', images: 'Images' };
   return map[lower] || lower;
+}
+
+function sheetRows(ss, sheetName) {
+  const def = RT_SHEET_DEFS.filter(function (d) { return d.name === sheetName; })[0];
+  const sheet = ss.getSheetByName(def.name);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const out = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    if (row.join('') === '') continue;
+    const obj = {};
+    def.headers.forEach(function (h, c) {
+      let v = row[c];
+      if (v instanceof Date) v = Utilities.formatDate(v, Session.getScriptTimeZone(), h.isDate ? 'yyyy-MM-dd' : 'HH:mm');
+      obj[h.key] = v === null ? '' : v;
+    });
+    out.push(obj);
+  }
+  return out;
 }
 
 function rowsToConfig(rows) {
@@ -246,18 +378,15 @@ function rowsToConfig(rows) {
 }
 
 function jsonOut(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** ล้าง cache เมื่อแก้ข้อมูลแล้วอยากให้เว็บเห็นทันที */
 function clearCache() {
-  CacheService.getScriptCache().removeAll(['rtpi_all', 'rtpi_schedule', 'rtpi_exams', 'rtpi_posts', 'rtpi_examimages', 'rtpi_config']);
+  CacheService.getScriptCache().removeAll(['rtpi_all', 'rtpi_schedule', 'rtpi_exams', 'rtpi_posts', 'rtpi_images', 'rtpi_config']);
   Logger.log('ล้าง cache แล้ว');
 }
 
-/** เพิ่มเมนูให้อัตโนมัติเมื่อเปิดสเปรดชีต */
 function onOpen() {
   try {
     SpreadsheetApp.getUi()
@@ -265,5 +394,5 @@ function onOpen() {
       .addItem('ตั้งค่าชีต (สร้างแท็บ/หัวตาราง)', 'setupSheets')
       .addItem('ล้าง cache ข้อมูลเว็บ', 'clearCache')
       .addToUi();
-  } catch (e) { /* ไม่มี UI ข้ามได้ */ }
+  } catch (e) {}
 }

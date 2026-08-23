@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบผู้ดูแล | RTPI</title>
+  <meta name="theme-color" content="#0f2447">
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="icons/logo-dept.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        colors: {
+          navy: {50:'#eef3fb',100:'#d8e3f5',200:'#b3c7e8',600:'#254b85',700:'#1d4076',800:'#16325c',900:'#0f2447'},
+          gold: {300:'#e7cf7a',400:'#d4af37',500:'#c9a227',600:'#a9861d'},
+        },
+        fontFamily: { sans: ['Sarabun','sans-serif'], serif: ['"Noto Serif Thai"','Sarabun','serif'] },
+      } }
+    };
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=4">
+  <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/data.js?v=4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+  <div id="rt-header"></div>
+
+  <main x-data="adminPage()" class="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+    <div class="mb-6 flex items-end justify-between gap-3 flex-wrap">
+      <div>
+        <h1 class="rt-serif text-2xl sm:text-3xl font-bold rt-navy-text">🔐 ระบบผู้ดูแล</h1>
+        <p class="rt-muted-text text-sm mt-1">อัปโหลดรูปตารางสอบ/ตารางสอน และเพิ่มข้อมูลเข้าสู่เว็บไซต์โดยตรง</p>
+      </div>
+      <button x-show="authed" @click="logout()" class="rt-btn rt-btn-ghost">ออกจากระบบ</button>
+    </div>
+
+    <!-- ══ หน้าล็อกอิน ══ -->
+    <template x-if="!authed">
+      <div class="rt-card p-8 max-w-md mx-auto mt-6">
+        <p class="text-center text-4xl mb-3">🔐</p>
+        <h2 class="rt-serif text-xl font-bold rt-navy-text text-center mb-1">เข้าสู่ระบบผู้ดูแล</h2>
+        <p class="text-sm rt-muted-text text-center mb-6">กรอกรหัสผ่านเพื่ออัปโหลดรูปและจัดการข้อมูล</p>
+        <form @submit.prevent="login()">
+          <label class="block text-xs font-semibold rt-muted-text mb-1">รหัสผ่าน</label>
+          <input :type="showPass ? 'text' : 'password'" x-model="pass" class="rt-input mb-2" placeholder="••••••" autofocus>
+          <label class="flex items-center gap-2 text-xs rt-muted-text mb-4 cursor-pointer">
+            <input type="checkbox" x-model="showPass" class="accent-[var(--rt-navy)]"> แสดงรหัสผ่าน
+          </label>
+          <p x-show="error" x-text="error" x-cloak class="text-sm text-red-600 mb-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+          <button type="submit" class="rt-btn rt-btn-primary w-full" :disabled="busy">
+            <span x-show="!busy">เข้าสู่ระบบ</span>
+            <span x-show="busy" x-cloak>กำลังตรวจสอบ…</span>
+          </button>
+        </form>
+      </div>
+    </template>
+
+    <!-- ══ แผงแอดมิน ══ -->
+    <div x-show="authed" x-cloak>
+      <div class="flex flex-wrap gap-2 mb-5">
+        <button @click="tab = 'upload'" class="rt-chip" :class="tab === 'upload' ? 'rt-active' : ''">📤 อัปโหลดรูป</button>
+        <button @click="tab = 'manage'" class="rt-chip" :class="tab === 'manage' ? 'rt-active' : ''">🗂 จัดการรูปทั้งหมด</button>
+        <button @click="tab = 'rows'" class="rt-chip" :class="tab === 'rows' ? 'rt-active' : ''">📋 เพิ่มข้อมูลตาราง</button>
+      </div>
+
+      <!-- แจ้งเตือน -->
+      <div x-show="notice.text" x-cloak class="rounded-lg border px-4 py-3 mb-5 text-sm"
+           :class="notice.ok ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-red-50 border-red-300 text-red-700'"
+           x-text="notice.text"></div>
+
+      <!-- ── อัปโหลดรูป ── -->
+      <section x-show="tab === 'upload'" class="rt-card p-6">
+        <h2 class="rt-serif font-bold rt-navy-text text-lg mb-4">📤 อัปโหลดรูปตารางสอบ / ตารางสอน / อื่น ๆ</h2>
+        <div class="grid gap-5 md:grid-cols-2">
+          <div>
+            <label class="block text-xs font-semibold rt-muted-text mb-1">เลือกไฟล์รูปภาพ</label>
+            <input type="file" accept="image/*" @change="pickFile($event)" class="rt-input !py-2">
+            <div class="mt-3 rounded-xl border-2 border-dashed border-[var(--rt-border)] bg-[var(--rt-surface-2)] p-3 flex items-center justify-center min-h-[12rem]">
+              <template x-if="preview">
+                <img :src="preview" class="max-h-64 rounded-lg" alt="ตัวอย่างรูป">
+              </template>
+              <p x-show="!preview" class="rt-muted-text text-sm">พรีวิวรูปจะแสดงที่นี่</p>
+            </div>
+            <p class="text-xs rt-muted-text mt-2" x-text="fileInfo"></p>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold rt-muted-text mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+              <select x-model="form.category" class="rt-select">
+                <option>ตารางสอบ</option>
+                <option>ตารางสอน</option>
+                <option>อื่น ๆ</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold rt-muted-text mb-1">ปีการศึกษา</label>
+                <input type="text" x-model="form.year" class="rt-input" placeholder="2569">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold rt-muted-text mb-1">ภาคเรียน</label>
+                <select x-model="form.term" class="rt-select">
+                  <option>ภาคเรียนที่ 1</option>
+                  <option>ภาคเรียนที่ 2</option>
+                  <option>ภาคฤดูร้อน</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold rt-muted-text mb-1">ชื่อรูป / คำอธิบาย</label>
+              <input type="text" x-model="form.title" class="rt-input" placeholder="เช่น ตารางสอบกลางภาค 1/2569 กลุ่ม R1/1">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold rt-muted-text mb-1">ผู้อัพโหลด</label>
+              <input type="text" x-model="form.author" class="rt-input" placeholder="ชื่อ-สกุล หรือหน่วยงาน">
+            </div>
+            <button @click="upload()" class="rt-btn rt-btn-gold w-full !py-3" :disabled="busy || !file">
+              <span x-show="!busy">📤 อัปโหลดขึ้นเว็บไซต์</span>
+              <span x-show="busy" x-cloak>⏳ กำลังอัปโหลด… (ห้ามปิดหน้านี้)</span>
+            </button>
+            <p class="text-xs rt-muted-text leading-relaxed">
+              รูปจะถูกเก็บใน Google Drive (โฟลเดอร์ RTPI-Uploads) และแสดงบนเว็บทันทีที่หน้าตารางสอบ/ตารางสอน
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── จัดการรูป ── -->
+      <section x-show="tab === 'manage'" x-cloak>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="rt-serif font-bold rt-navy-text text-lg">🗂 รูปทั้งหมดในระบบ</h2>
+          <button @click="refreshImages()" class="rt-btn rt-btn-ghost !py-1.5 text-sm">🔄 รีเฟรช</button>
+        </div>
+        <template x-if="loadingImages">
+          <div class="rt-card p-4 space-y-3"><div class="rt-skeleton h-20"></div><div class="rt-skeleton h-20"></div></div>
+        </template>
+        <template x-if="!loadingImages && images.length === 0">
+          <div class="rt-empty">
+            <p class="text-3xl mb-2">🖼</p>
+            <p class="font-medium">ยังไม่มีรูปในระบบ</p>
+            <p class="text-sm mt-1">เริ่มอัปโหลดได้ที่แท็บ "อัปโหลดรูป"</p>
+          </div>
+        </template>
+        <div class="space-y-3">
+          <template x-for="(im, i) in images" :key="im.image + i">
+            <div class="rt-card p-4 flex gap-4 items-center">
+              <img :src="rtDirectImage(im.image)" class="w-24 h-16 object-contain rounded-lg bg-[var(--rt-surface-2)] shrink-0 cursor-zoom-in"
+                   loading="lazy" @click="rtOpenLightbox(rtDirectImage(im.image), im.title)" alt="">
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold rt-navy-text truncate" x-text="im.title || '(ไม่มีชื่อ)'"></p>
+                <p class="text-sm rt-muted-text">
+                  <span x-text="im.category || '-'"></span> ·
+                  <span x-text="'ปี ' + (im.year || '-')"></span> ·
+                  <span x-text="rtThaiDate(im.date)"></span> ·
+                  <span x-text="'โดย ' + (im.author || '-')"></span>
+                </p>
+              </div>
+              <button @click="removeImage(im)" class="rt-btn rt-btn-ghost !px-3 !py-1.5 text-sm text-red-600 border-red-300 hover:border-red-500 shrink-0">🗑 ลบ</button>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <!-- ── เพิ่มข้อมูลตาราง ── -->
+      <section x-show="tab === 'rows'" x-cloak class="rt-card p-6">
+        <h2 class="rt-serif font-bold rt-navy-text text-lg mb-1">📋 เพิ่มข้อมูลลงตาราง (Schedule / Exams / Posts)</h2>
+        <p class="text-sm rt-muted-text mb-4">วางข้อมูลแบบแต่ละแถวต่อบรรทัด คั่นแต่ละช่องด้วยเครื่องหมาย Tab หรือ | — คอลัมน์ต้องเรียงตามลำดับด้านล่าง</p>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold rt-muted-text mb-1">เป้าหมาย</label>
+          <select x-model="rowsTarget" class="rt-select max-w-xs">
+            <option value="Exams">📅 ตารางสอบ (Exams)</option>
+            <option value="Schedule">📚 ตารางสอน (Schedule)</option>
+            <option value="Posts">📰 โพสต์/ประกาศ (Posts)</option>
+          </select>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <template x-for="(c, i) in rowColumns" :key="i">
+              <span class="text-[11px] rt-navy-soft rt-navy-text rounded px-2 py-0.5 font-medium" x-text="(i + 1) + '. ' + c"></span>
+            </template>
+          </div>
+        </div>
+        <textarea x-model="rowsText" rows="8" class="rt-input font-mono !text-[13px]" placeholder="ตัวอย่าง (ตารางสอบ):&#10;2569 | ภาคเรียนที่ 1 | กลางภาค | 401101 | กายวิภาคศาสตร์ฯ | R1/1 | 2026-09-21 | 09:00-12:00 | ห้องสอบ A | -"></textarea>
+        <p class="text-xs rt-muted-text mt-1">ตรวจพบ <span class="font-bold" x-text="parsedRows.length"></span> แถว · วันที่ใช้รูปแบบ ปี-เดือน-วัน (2026-09-21) หรือ 21/9/2026</p>
+        <button @click="submitRows()" class="rt-btn rt-btn-primary mt-3" :disabled="busy || !parsedRows.length">
+          <span x-show="!busy">➕ เพิ่ม <span x-text="parsedRows.length"></span> แถว</span>
+          <span x-show="busy" x-cloak>⏳ กำลังบันทึก…</span>
+        </button>
+      </section>
+    </div>
+  </main>
+
+  <div id="rt-footer"></div>
+
+  <script src="js/ui.js?v=4"></script>
+  <script>
+    rtRenderHeader('admin');
+    rtRenderFooter();
+
+    function adminPage() {
+      const COLS = {
+        Exams: ['ปีการศึกษา', 'ภาคเรียน', 'ประเภทการสอบ', 'รหัสวิชา', 'รายวิชา', 'กลุ่มสอบ', 'วันที่สอบ', 'เวลา', 'ห้องสอบ', 'หมายเหตุ'],
+        Schedule: ['ปีการศึกษา', 'ภาคเรียน', 'กลุ่มเรียน', 'วัน', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'รหัสวิชา', 'รายวิชา', 'ห้อง', 'อาจารย์'],
+        Posts: ['รหัสโพสต์', 'หัวข้อ', 'หมวดหมู่', 'เนื้อหา', 'ลิงก์รูป', 'ลิงก์เพิ่มเติม', 'ผู้โพสต์', 'วันที่โพสต์', 'ปักหมุด(TRUE/FALSE)'],
+      };
+      return {
+        authed: false,
+        busy: false,
+        error: '',
+        showPass: false,
+        pass: '',
+        tab: 'upload',
+        notice: { ok: true, text: '' },
+        // อัปโหลด
+        file: null,
+        preview: '',
+        fileInfo: '',
+        form: { category: 'ตารางสอบ', year: '2569', term: 'ภาคเรียนที่ 1', title: '', author: '' },
+        // จัดการรูป
+        images: [],
+        loadingImages: false,
+        // เพิ่มแถว
+        rowsTarget: 'Exams',
+        rowsText: '',
+
+        async init() {
+          const saved = sessionStorage.getItem('rt-admin-pass');
+          if (saved) {
+            this.pass = saved;
+            const r = await this.api('ping');
+            if (r.ok) this.enter();
+          }
+          this.refreshImages();
+        },
+
+        async api(action, extra) {
+          const res = await fetch(RT_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(Object.assign({ action: action, password: this.pass }, extra || {})),
+            redirect: 'follow',
+          });
+          try { return await res.json(); }
+          catch (e) { return { ok: false, error: 'ติดต่อ Apps Script ไม่ได้ — ต้องอัปเกรด Code.gs แล้ว Deploy เวอร์ชันใหม่ก่อน (ดู README)' }; }
+        },
+
+        async login() {
+          this.error = '';
+          this.busy = true;
+          const r = await this.api('ping');
+          this.busy = false;
+          if (r.ok) {
+            sessionStorage.setItem('rt-admin-pass', this.pass);
+            this.enter();
+          } else {
+            this.error = r.error || 'เข้าสู่ระบบไม่สำเร็จ';
+          }
+        },
+        enter() {
+          this.authed = true;
+          this.error = '';
+        },
+        logout() {
+          sessionStorage.removeItem('rt-admin-pass');
+          this.pass = '';
+          this.authed = false;
+        },
+
+        notify(ok, text) {
+          this.notice = { ok: ok, text: text };
+          setTimeout(() => { this.notice = { ok: true, text: '' }; }, 6000);
+          if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        pickFile(ev) {
+          const f = ev.target.files && ev.target.files[0];
+          if (!f) { this.file = null; this.preview = ''; this.fileInfo = ''; return; }
+          this.file = f;
+          this.preview = URL.createObjectURL(f);
+          this.fileInfo = `${f.name} · ${(f.size / 1024 / 1024).toFixed(2)} MB`;
+        },
+
+        async upload() {
+          if (!this.file) return;
+          this.busy = true;
+          try {
+            const base64 = await new Promise((resolve, reject) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(String(fr.result).split(',')[1]);
+              fr.onerror = reject;
+              fr.readAsDataURL(this.file);
+            });
+            const r = await this.api('uploadImage', {
+              base64: base64,
+              mimeType: this.file.type || 'image/jpeg',
+              fileName: this.file.name,
+              category: this.form.category,
+              year: this.form.year,
+              term: this.form.term,
+              title: this.form.title || (this.form.category + ' ' + this.form.term + '/' + this.form.year),
+              author: this.form.author,
+            });
+            if (r.ok) {
+              this.notify(true, '✅ อัปโหลดสำเร็จ — รูปแสดงบนเว็บแล้ว (หากยังไม่เห็น รอ 1 นาที หรือกดรีเฟรช)');
+              this.file = null; this.preview = ''; this.fileInfo = '';
+              this.form.title = '';
+              this.refreshImages(true);
+            } else {
+              this.notify(false, '❌ ' + (r.error || 'อัปโหลดไม่สำเร็จ'));
+            }
+          } catch (e) {
+            this.notify(false, '❌ อ่านไฟล์ไม่สำเร็จ: ' + e.message);
+          }
+          this.busy = false;
+        },
+
+        async refreshImages(force) {
+          this.loadingImages = true;
+          const d = await RTData.load(force);
+          this.images = [...(d.images || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          this.loadingImages = false;
+          if (this.authed && d.config && this.form.year === '2569' && d.config.currentYear) {
+            this.form.year = d.config.currentYear;
+            if (d.config.currentTerm) this.form.term = d.config.currentTerm;
+          }
+        },
+
+        async removeImage(im) {
+          if (!confirm(`ลบรูป "${im.title || 'นี้'}" ออกจากระบบ?`)) return;
+          this.busy = true;
+          const r = await this.api('deleteImage', { url: im.image });
+          this.busy = false;
+          if (r.ok) {
+            this.notify(true, '🗑 ลบรูปแล้ว');
+            this.refreshImages(true);
+          } else {
+            this.notify(false, '❌ ' + (r.error || 'ลบไม่สำเร็จ'));
+          }
+        },
+
+        get rowColumns() { return COLS[this.rowsTarget] || []; },
+        get parsedRows() {
+          return this.rowsText.split('\n')
+            .map(l => l.trim())
+            .filter(Boolean)
+            .map(line => line.includes('\t') ? line.split('\t') : line.split('|').map(s => s.trim()));
+        },
+        async submitRows() {
+          this.busy = true;
+          const r = await this.api('addRows', { sheet: this.rowsTarget, rows: this.parsedRows });
+          this.busy = false;
+          if (r.ok) {
+            this.notify(true, `✅ เพิ่ม ${r.added} แถวลง ${this.rowsTarget} แล้ว`);
+            this.rowsText = '';
+          } else {
+            this.notify(false, '❌ ' + (r.error || 'บันทึกไม่สำเร็จ'));
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>

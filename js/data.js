@@ -17,7 +17,7 @@ const RTData = (() => {
     schedule: [],
     exams: [],
     posts: [],
-    examImages: [],
+    images: [],
   });
 
   /* ── แผนที่หัวตารางภาษาไทย → คีย์ JSON ── */
@@ -37,9 +37,10 @@ const RTData = (() => {
       'ลิงก์รูปภาพ': 'image', 'ลิงก์เพิ่มเติม': 'link', 'ผู้โพสต์': 'author',
       'วันที่โพสต์': 'date', 'ปักหมุด': 'pinned',
     },
-    ExamImages: {
-      'ปีการศึกษา': 'year', 'ภาคเรียน': 'term', 'ประเภทการสอบ': 'type',
+    Images: {
+      'หมวดหมู่': 'category', 'ปีการศึกษา': 'year', 'ภาคเรียน': 'term',
       'ชื่อรูป/คำอธิบาย': 'title', 'ลิงก์รูปภาพ': 'image', 'วันที่เผยแพร่': 'date',
+      'ผู้อัพโหลด': 'author',
     },
     Config: { 'คีย์': 'key', 'ค่า': 'value' },
   };
@@ -85,7 +86,7 @@ const RTData = (() => {
     Schedule: ['เวลาเริ่ม'],
     Exams: ['วันที่สอบ'],
     Posts: ['หัวข้อ'],
-    ExamImages: ['ลิงก์รูปภาพ'],
+    Images: ['ลิงก์รูปภาพ'],
     Config: ['ค่า'],
   };
 
@@ -103,14 +104,14 @@ const RTData = (() => {
   }
 
   async function fetchFromGviz(sheetId) {
-    const tabs = ['Schedule', 'Exams', 'Posts', 'ExamImages', 'Config'];
+    const tabs = ['Schedule', 'Exams', 'Posts', 'Images', 'Config'];
     const settled = await Promise.all(tabs.map(t => gvizTab(sheetId, t).catch(() => [])));
     const d = EMPTY();
     d.updated = new Date().toISOString();
     d.schedule = settled[0];
     d.exams = settled[1];
     d.posts = settled[2];
-    d.examImages = settled[3];
+    d.images = settled[3];
     settled[4].forEach(r => { if (r.key) d.config[String(r.key)] = String(r.value ?? ''); });
     return d;
   }
@@ -119,7 +120,7 @@ const RTData = (() => {
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const d = Object.assign(EMPTY(), await res.json());
-    if (!Array.isArray(d.examImages)) d.examImages = [];
+    if (!Array.isArray(d.images)) d.images = Array.isArray(d.examImages) ? d.examImages : [];
     return d;
   }
 

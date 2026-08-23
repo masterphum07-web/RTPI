@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ตารางสอบ | สาขาวิชารังสีเทคนิค วทก.</title>
   <meta name="theme-color" content="#0f2447">
-  <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+  <link rel="icon" type="image/png" href="icons/logo-dept.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +22,10 @@
       } }
     };
   </script>
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
   <script>(function(){try{var t=localStorage.getItem('rt-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="js/config.js?v=3"></script>
-  <script src="js/data.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/data.js?v=4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -139,8 +139,8 @@
           <p class="text-3xl mb-2">🖼</p>
           <p class="font-medium">ยังไม่มีรูปประกาศตารางสอบ</p>
           <p class="text-sm mt-2 leading-relaxed">
-            เมื่อสาขาส่งรูปตารางสอบมา ให้เพิ่มที่แท็บ <b>ExamImages</b> ใน Google Sheets<br>
-            (อัปโหลดรูปไว้ Google Drive → คลิกขวา "แชร์" ให้ทุกคนที่มีลิงก์ดูได้ → นำลิงก์มาใส่) ระบบแปลงลิงก์ให้แสดงบนเว็บเอง
+            ผู้ดูแลสามารถอัปโหลดรูปตารางสอบได้ที่ <a href="admin.html" class="underline rt-navy-text font-medium">ระบบผู้ดูแล</a><br>
+            หรือเพิ่มลิงก์รูปในแท็บ <b>Images</b> ของ Google Sheets (รองรับลิงก์ Google Drive)
           </p>
         </div>
       </template>
@@ -164,7 +164,7 @@
 
   <div id="rt-footer"></div>
 
-  <script src="js/ui.js?v=3"></script>
+  <script src="js/ui.js?v=4"></script>
   <script>
     rtRenderHeader('exams');
     rtRenderFooter();
@@ -187,7 +187,9 @@
         apply(d) {
           this.cfg = d.config;
           this.exams = d.exams;
-          this.images = [...(d.examImages || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+          this.images = [...(d.images || [])]
+            .filter(im => (im.category || 'ตารางสอบ') === 'ตารางสอบ')
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           if (!this.year && d.config.currentYear && d.exams.some(e => e.year === d.config.currentYear)) {
             this.year = d.config.currentYear;
           }
