@@ -9,7 +9,7 @@ const RT_CONFIG = {
   SHEET_ID: '15Rwiuwwi7GF-SA2Rr2SY3xtNwxQTCBbzJhHbMi2RVsI',
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxeJ2QVm2Lynu2SB_JvIaBJHixz9sLahRlplD9PpTYJiU2YEgSzjFoy0TsX522o_n3D/exec',
   // URL ของ PaddleOCR backend; เว้นว่างเพื่อใช้ OCR สำรองในเบราว์เซอร์
-  OCR_URL: '',
+  OCR_URL: 'http://127.0.0.1:7860',
 
   // ระยะเวลาดึงข้อมูลใหม่ (วินาที)
   POLL_SECONDS: 60,
