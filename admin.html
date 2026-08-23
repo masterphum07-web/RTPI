@@ -216,10 +216,13 @@
                 <option>อื่น ๆ</option>
               </select>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="block text-xs font-semibold rt-muted-text mb-1">ปีการศึกษา</label>
-                <input type="text" x-model="form.year" class="rt-input" placeholder="2569">
+                <select x-model="form.year" class="rt-select">
+                  <option value="">ไม่ระบุ</option>
+                  <template x-for="y in uploadYears" :key="y"><option :value="y" x-text="y"></option></template>
+                </select>
               </div>
               <div>
                 <label class="block text-xs font-semibold rt-muted-text mb-1">ภาคเรียน</label>
@@ -227,6 +230,16 @@
                   <option>ภาคเรียนที่ 1</option>
                   <option>ภาคเรียนที่ 2</option>
                   <option>ภาคฤดูร้อน</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold rt-muted-text mb-1">ชั้นปี</label>
+                <select x-model="form.level" class="rt-select">
+                  <option value="">ไม่ระบุ</option>
+                  <option>ปี 1</option>
+                  <option>ปี 2</option>
+                  <option>ปี 3</option>
+                  <option>ปี 4</option>
                 </select>
               </div>
             </div>
@@ -341,7 +354,7 @@
         file: null,
         preview: '',
         fileInfo: '',
-        form: { category: 'ตารางสอบ', year: '2569', term: 'ภาคเรียนที่ 1', title: '', author: '' },
+        form: { category: 'ตารางสอบ', year: '2569', term: 'ภาคเรียนที่ 1', level: '', title: '', author: '' },
         // จัดการรูป
         images: [],
         loadingImages: false,
@@ -441,6 +454,7 @@
               category: this.form.category,
               year: this.form.year,
               term: this.form.term,
+              level: this.form.level,
               title: this.form.title || (this.form.category + ' ' + this.form.term + '/' + this.form.year),
               author: this.form.author,
             });
@@ -469,6 +483,18 @@
             this.form.year = d.config.currentYear;
             if (d.config.currentTerm) this.form.term = d.config.currentTerm;
           }
+        },
+
+        get uploadYears() {
+          const current = this.data.config && this.data.config.currentYear;
+          const years = [...new Set([
+            current,
+            ...(this.data.schedule || []).map(r => r.year),
+            ...(this.data.exams || []).map(r => r.year),
+            ...(this.data.images || []).map(r => r.year),
+          ].filter(Boolean).map(String))];
+          if (!years.includes('2569')) years.push('2569');
+          return years.sort((a, b) => Number(b) - Number(a));
         },
 
         get stats() {

@@ -40,7 +40,7 @@ const RTData = (() => {
     Images: {
       'หมวดหมู่': 'category', 'ปีการศึกษา': 'year', 'ภาคเรียน': 'term',
       'ชื่อรูป/คำอธิบาย': 'title', 'ลิงก์รูปภาพ': 'image', 'วันที่เผยแพร่': 'date',
-      'ผู้อัพโหลด': 'author',
+      'ผู้อัพโหลด': 'author', 'ชั้นปี': 'level',
     },
     Config: { 'คีย์': 'key', 'ค่า': 'value' },
   };
@@ -196,12 +196,15 @@ function rtPadTime(t) {
   return m ? `${m[1].padStart(2, '0')}:${m[2]}` : String(t);
 }
 
-/* แปลงลิงก์แชร์ Google Drive ให้เป็นลิงก์รูปที่ <img> ใช้ได้โดยตรง */
-function rtDirectImage(u) {
+/* แปลงลิงก์แชร์ Google Drive ทุกรูปแบบให้เป็นลิงก์รูปที่ <img> โหลดได้จริง
+ * (ใช้ lh3.googleusercontent.com ซึ่งเสถียรกว่า uc?export=view ที่ Drive มักบล็อก) */
+function rtDirectImage(u, width) {
   if (!u) return '';
-  const m = String(u).match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([\w-]{15,})/);
-  if (m) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
-  return String(u);
+  const s = String(u);
+  const m = s.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[a-z=&]*&)?id=)([\w-]{15,})/)
+        || s.match(/lh3\.googleusercontent\.com\/d\/([\w-]{15,})/);
+  if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w${width || 1600}`;
+  return s;
 }
 
 /* หาชั้นปี (ปี 1-4) ของแถวข้อมูล — ใช้คอลัมน์ "ชั้นปี" ถ้ามี

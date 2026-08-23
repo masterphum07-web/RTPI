@@ -73,6 +73,7 @@ const RT_SHEET_DEFS = [
       { th: 'ลิงก์รูปภาพ', key: 'image' },
       { th: 'วันที่เผยแพร่', key: 'date', isDate: true },
       { th: 'ผู้อัพโหลด', key: 'author' },
+      { th: 'ชั้นปี', key: 'level', list: ['ปี 1', 'ปี 2', 'ปี 3', 'ปี 4'] },
     ],
     samples: [],
   },
@@ -273,7 +274,7 @@ function doPost(e) {
         } catch (shErr) {
           return jsonOut({ ok: false, error: 'ตั้งค่าการแชร์ไฟล์ไม่สำเร็จ: ' + shErr.message });
         }
-        const url = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+        const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
 
         const sheet = ss.getSheetByName('Images');
         if (!sheet) return jsonOut({ ok: false, error: 'ไม่พบแท็บ Images — รัน setupSheets ก่อน' });
@@ -285,6 +286,7 @@ function doPost(e) {
           url,
           new Date(),
           String(body.author || 'แอดมิน'),
+          String(body.level || ''),
         ]);
         return jsonOut({ ok: true, url: url, fileId: file.getId() });
       }
@@ -302,7 +304,7 @@ function doPost(e) {
             removed = true;
           }
         }
-        const m = url.match(/[?&]id=([\w-]{15,})/);
+        const m = url.match(/[\?&]id=([\w-]{15,})/) || url.match(/\/d\/([\w-]{15,})/);
         if (m) { try { DriveApp.getFileById(m[1]).setTrashed(true); } catch (dErr) {} }
         return jsonOut({ ok: removed, error: removed ? '' : 'ไม่พบรูปนี้ในชีต' });
       }
