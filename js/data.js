@@ -81,7 +81,8 @@ const RTData = (() => {
   }
 
   async function gvizTab(sheetId, tabName) {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(tabName)}`;
+    // headers=1 บังคับให้แถวแรกเป็นหัวตารางเสมอ (ไม่ให้ gviz เดาเองแล้วรวมหลายแถวเป็น header)
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(tabName)}`;
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
