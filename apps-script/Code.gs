@@ -272,7 +272,8 @@ function doPost(e) {
         try {
           file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         } catch (shErr) {
-          return jsonOut({ ok: false, error: 'ตั้งค่าการแชร์ไฟล์ไม่สำเร็จ: ' + shErr.message });
+          // บาง Google Workspace ปิดการแชร์แบบ Anyone ไว้ ไฟล์ยังอัปโหลดสำเร็จ
+          // จึงต้องบันทึกข้อมูลต่อ แล้วแจ้งเป็นคำเตือนแทนการทำรายการล้มเหลว
         }
         const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
 
@@ -288,7 +289,7 @@ function doPost(e) {
           String(body.author || 'แอดมิน'),
           String(body.level || ''),
         ]);
-        return jsonOut({ ok: true, url: url, fileId: file.getId() });
+        return jsonOut({ ok: true, url: url, fileId: file.getId(), shareWarning: 'ไฟล์อัปโหลดแล้ว แต่ตั้งค่าลิงก์สาธารณะไม่สำเร็จ' });
       }
 
       case 'deleteImage': {

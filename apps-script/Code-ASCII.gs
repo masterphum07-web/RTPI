@@ -237,7 +237,6 @@ function doPost(e) {
         try {
           file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         } catch (shErr) {
-          return jsonOut({ ok: false, error: '\u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u0e01\u0e32\u0e23\u0e41\u0e0a\u0e23\u0e4c\u0e44\u0e1f\u0e25\u0e4c\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + shErr.message });
         }
         const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
 
@@ -251,8 +250,9 @@ function doPost(e) {
           url,
           new Date(),
           String(body.author || '\u0e41\u0e2d\u0e14\u0e21\u0e34\u0e19'),
+          String(body.level || ''),
         ]);
-        return jsonOut({ ok: true, url: url, fileId: file.getId() });
+        return jsonOut({ ok: true, url: url, fileId: file.getId(), shareWarning: '\u0e44\u0e1f\u0e25\u0e4c\u0e2d\u0e31\u0e1b\u0e42\u0e2bลดแล้ว แต่ตั้งค่าลิงก์สาธารณะไม่สำเร็จ' });
       }
 
       case 'deleteImage': {

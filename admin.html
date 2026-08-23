@@ -459,7 +459,7 @@
               author: this.form.author,
             });
             if (r.ok) {
-              this.notify(true, '✅ อัปโหลดสำเร็จ — รูปแสดงบนเว็บแล้ว (หากยังไม่เห็น รอ 1 นาที หรือกดรีเฟรช)');
+              this.notify(true, r.shareWarning ? '⚠️ อัปโหลดสำเร็จ แต่ Google Drive ไม่อนุญาตให้เปิดลิงก์สาธารณะ — ต้องตั้งค่าแชร์ไฟล์เป็น “ทุกคนที่มีลิงก์”' : '✅ อัปโหลดสำเร็จ — รูปแสดงบนเว็บแล้ว (หากยังไม่เห็น รอ 1 นาที หรือกดรีเฟรช)');
               this.file = null; this.preview = ''; this.fileInfo = '';
               this.form.title = '';
               this.refreshImages(true);
