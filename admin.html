@@ -228,31 +228,48 @@
         rowsTarget: 'Exams',
         rowsText: '',
 
+        checkResult(r) {
+          // รุ่นเก่าของ Apps Script ไม่มี doPost — คำตอบที่ได้จะเป็นข้อมูล doGet แทน
+          if (r.ok && ('schedule' in r || 'config' in r)) {
+            return { ok: false, error: 'Apps Script ยังเป็นรุ่นเก่า — วาง Code.gs รุ่นใหม่แล้ว Deploy เวอร์ชันใหม่ก่อน (ดู README หัวข้อ "การอัปเกรด")' };
+          }
+          return r;
+        },
+
         async init() {
           const saved = sessionStorage.getItem('rt-admin-pass');
           if (saved) {
             this.pass = saved;
-            const r = await this.api('ping');
+            const r = this.checkResult(await this.api('ping'));
             if (r.ok) this.enter();
           }
           this.refreshImages();
         },
 
         async api(action, extra) {
-          const res = await fetch(RT_CONFIG.SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(Object.assign({ action: action, password: this.pass }, extra || {})),
-            redirect: 'follow',
-          });
-          try { return await res.json(); }
-          catch (e) { return { ok: false, error: 'ติดต่อ Apps Script ไม่ได้ — ต้องอัปเกรด Code.gs แล้ว Deploy เวอร์ชันใหม่ก่อน (ดู README)' }; }
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 25000);
+          try {
+            const res = await fetch(RT_CONFIG.SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(Object.assign({ action: action, password: this.pass }, extra || {})),
+              redirect: 'follow',
+              signal: ctrl.signal,
+            });
+            try { return await res.json(); }
+            catch (e) { return { ok: false, error: 'การตอบกลับไม่ใช่ JSON — ต้องวาง Code.gs รุ่นใหม่แล้ว Deploy เวอร์ชันใหม่ก่อน (ดูวิธีใน README)' }; }
+          } catch (e) {
+            return { ok: false, error: e.name === 'AbortError' ? 'หมดเวลาเชื่อมต่อ (25 วินาที) — ลองใหม่อีกครั้ง' : 'ติดต่อเซิร์ฟเวอร์ไม่ได้: ' + e.message };
+          } finally {
+            clearTimeout(timer);
+          }
         },
 
         async login() {
           this.error = '';
           this.busy = true;
-          const r = await this.api('ping');
+          const r = this.checkResult(await this.api('ping'));
           this.busy = false;
           if (r.ok) {
             sessionStorage.setItem('rt-admin-pass', this.pass);
