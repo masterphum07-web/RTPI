@@ -598,11 +598,20 @@
           }).filter(row => row.length > 1);
         },
         async runOcr() {
-          if (!this.ocrFile || !window.Tesseract) return;
+          if (!this.ocrFile || (!RT_CONFIG.OCR_URL && !window.Tesseract)) return;
           this.busy = true; this.ocrProgress = 'กำลังอ่านรูป…';
           try {
-            const result = await Tesseract.recognize(this.ocrFile, 'tha+eng', { logger: m => { if (m.status === 'recognizing text') this.ocrProgress = 'กำลังอ่านรูป ' + Math.round((m.progress || 0) * 100) + '%'; } });
-            this.ocrText = result.data.text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => line.split(/\t|\s{2,}/).map(s => s.trim()).join(' | ')).join('\n');
+            if (RT_CONFIG.OCR_URL) {
+              this.ocrProgress = 'กำลังวิเคราะห์โครงสร้างตาราง…';
+              const fd = new FormData(); fd.append('file', this.ocrFile);
+              const res = await fetch(RT_CONFIG.OCR_URL.replace(/\/$/, '') + '/extract', { method: 'POST', body: fd });
+              const data = await res.json();
+              if (!res.ok || !data.ok) throw new Error(data.detail || 'OCR backend ตอบกลับไม่สำเร็จ');
+              this.ocrText = data.rows.map(row => row.map(cell => String(cell || '').replace(/[|\r\n]/g, ' ')).join(' | ')).join('\n');
+            } else {
+              const result = await Tesseract.recognize(this.ocrFile, 'tha+eng', { logger: m => { if (m.status === 'recognizing text') this.ocrProgress = 'กำลังอ่านรูป ' + Math.round((m.progress || 0) * 100) + '%'; } });
+              this.ocrText = result.data.text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => line.split(/\t|\s{2,}/).map(s => s.trim()).join(' | ')).join('\n');
+            }
             this.ocrProgress = 'อ่านเสร็จแล้ว — กรุณาตรวจแก้';
           } catch (e) { this.ocrProgress = ''; this.notify(false, '❌ อ่านรูปไม่สำเร็จ: ' + e.message); }
           this.busy = false;
