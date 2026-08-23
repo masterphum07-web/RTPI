@@ -241,6 +241,8 @@ function doGet(e) {
  *   uploadImage — อัปโหลดรูป (base64) ขึ้น Drive + บันทึกแถวใน Images
  *   deleteImage — ลบรูป (ลบแถว + ทิ้งไฟล์ใน Drive)
  *   addRows     — เพิ่มแถวข้อมูลลง Schedule / Exams / Posts
+ *   saveConfig  — แก้ค่าตั้งค่าเว็บไซต์
+ *   uploadPostImage — อัปโหลดรูปและสร้างโพสต์ข่าว
  *************************************************************/
 function doPost(e) {
   let body = {};
@@ -335,6 +337,35 @@ function doPost(e) {
         });
         sheet.getRange(sheet.getLastRow() + 1, 1, norm.length, def.headers.length).setValues(norm);
         return jsonOut({ ok: true, added: norm.length });
+      }
+
+      case 'saveConfig': {
+        const sheet = ss.getSheetByName('Config');
+        if (!sheet) return jsonOut({ ok: false, error: 'ไม่พบแท็บ Config — รัน setupSheets ก่อน' });
+        const values = body.values || {};
+        Object.keys(values).forEach(function (key) {
+          const rows = sheet.getDataRange().getValues();
+          let found = false;
+          for (let i = 1; i < rows.length; i++) {
+            if (String(rows[i][0]) === key) { sheet.getRange(i + 1, 2).setValue(String(values[key] || '')); found = true; break; }
+          }
+          if (!found) sheet.appendRow([key, String(values[key] || '')]);
+        });
+        clearCache();
+        return jsonOut({ ok: true });
+      }
+
+      case 'uploadPostImage': {
+        const folder = getUploadFolder_();
+        const blob = Utilities.newBlob(Utilities.base64Decode(String(body.base64 || '')), String(body.mimeType || 'image/jpeg'), String(body.fileName || ('news-' + Date.now() + '.jpg')));
+        const file = folder.createFile(blob);
+        try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (shareErr) {}
+        const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
+        const sheet = ss.getSheetByName('Posts');
+        if (!sheet) return jsonOut({ ok: false, error: 'ไม่พบแท็บ Posts — รัน setupSheets ก่อน' });
+        sheet.appendRow([String(body.id || ('P' + Date.now())), String(body.title || ''), String(body.category || 'ข่าวสาร'), String(body.body || ''), url, String(body.link || ''), String(body.author || 'แอดมิน'), new Date(), String(body.pinned || 'FALSE')]);
+        clearCache();
+        return jsonOut({ ok: true, url: url, fileId: file.getId() });
       }
 
       default:

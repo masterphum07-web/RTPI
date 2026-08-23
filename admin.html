@@ -70,6 +70,7 @@
         <button @click="tab = 'upload'" class="rt-chip" :class="tab === 'upload' ? 'rt-active' : ''">📤 อัปโหลดรูป</button>
         <button @click="tab = 'manage'" class="rt-chip" :class="tab === 'manage' ? 'rt-active' : ''">🗂 จัดการรูปทั้งหมด</button>
         <button @click="tab = 'rows'" class="rt-chip" :class="tab === 'rows' ? 'rt-active' : ''">📋 เพิ่มข้อมูลตาราง</button>
+        <button @click="tab = 'settings'" class="rt-chip" :class="tab === 'settings' ? 'rt-active' : ''">⚙️ ตั้งค่าเว็บ</button>
       </div>
 
       <!-- แจ้งเตือน -->
@@ -300,6 +301,31 @@
       </section>
 
       <!-- ── เพิ่มข้อมูลตาราง ── -->
+      <section x-show="tab === 'settings'" x-cloak class="rt-card p-6">
+        <h2 class="rt-serif font-bold rt-navy-text text-lg mb-1">⚙️ ตั้งค่าเว็บไซต์</h2>
+        <p class="text-sm rt-muted-text mb-4">แก้ข้อความที่แสดงบนเว็บไซต์และแถบประกาศได้จากหน้านี้</p>
+        <div class="grid gap-3 md:grid-cols-2">
+          <input x-model="settings.siteName" class="rt-input" placeholder="ชื่อสาขา">
+          <input x-model="settings.currentYear" class="rt-input" placeholder="ปีการศึกษาปัจจุบัน">
+          <input x-model="settings.currentTerm" class="rt-input" placeholder="ภาคเรียนปัจจุบัน">
+          <input x-model="settings.contactName" class="rt-input" placeholder="ชื่อผู้ติดต่อ">
+          <input x-model="settings.lineUrl" class="rt-input" placeholder="ลิงก์ LINE">
+          <input x-model="settings.facebookUrl" class="rt-input" placeholder="ลิงก์ Facebook">
+          <textarea x-model="settings.announcement" rows="2" class="rt-input md:col-span-2" placeholder="ข้อความประกาศวิ่ง"></textarea>
+        </div>
+        <button @click="saveSettings()" class="rt-btn rt-btn-primary mt-4" :disabled="busy">💾 บันทึกการตั้งค่า</button>
+        <hr class="my-6 border-[var(--rt-border)]">
+        <h3 class="font-bold rt-navy-text mb-3">📰 เพิ่มข่าวพร้อมรูป</h3>
+        <div class="grid gap-3 md:grid-cols-2">
+          <input x-model="news.title" class="rt-input" placeholder="หัวข้อข่าว *">
+          <input x-model="news.category" class="rt-input" placeholder="หมวดหมู่ข่าว">
+          <textarea x-model="news.body" rows="3" class="rt-input md:col-span-2" placeholder="รายละเอียดข่าว"></textarea>
+          <input x-model="news.author" class="rt-input" placeholder="ผู้โพสต์">
+          <input type="file" accept="image/*" @change="news.file = $event.target.files[0]" class="rt-input !py-2">
+        </div>
+        <button @click="uploadNews()" class="rt-btn rt-btn-gold mt-3" :disabled="busy || !news.title || !news.file">📤 ลงข่าวพร้อมรูป</button>
+      </section>
+
       <section x-show="tab === 'rows'" x-cloak class="rt-card p-6">
         <h2 class="rt-serif font-bold rt-navy-text text-lg mb-1">📋 เพิ่มข้อมูลลงตาราง (Schedule / Exams / Posts)</h2>
         <p class="text-sm rt-muted-text mb-4">วางข้อมูลแบบแต่ละแถวต่อบรรทัด คั่นแต่ละช่องด้วยเครื่องหมาย Tab หรือ | — คอลัมน์ต้องเรียงตามลำดับด้านล่าง</p>
@@ -361,6 +387,8 @@
         // เพิ่มแถว
         rowsTarget: 'Exams',
         rowsText: '',
+        settings: {},
+        news: { title: '', category: 'ข่าวสาร', body: '', author: '', file: null },
 
         checkResult(r) {
           // รุ่นเก่าของ Apps Script ไม่มี doPost — คำตอบที่ได้จะเป็นข้อมูล doGet แทน
@@ -476,6 +504,7 @@
           this.loadingImages = true;
           const d = await RTData.load(force);
           this.data = d;
+          this.settings = Object.assign({}, d.config || {});
           this.readOk = RTData.state() === 'live';
           this.images = [...(d.images || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           this.loadingImages = false;
@@ -551,6 +580,25 @@
           } else {
             this.notify(false, '❌ ' + (r.error || 'บันทึกไม่สำเร็จ'));
           }
+        },
+        async saveSettings() {
+          this.busy = true;
+          const r = await this.api('saveConfig', { values: this.settings });
+          this.busy = false;
+          this.notify(!!r.ok, r.ok ? '✅ บันทึกการตั้งค่าแล้ว — รีเฟรชหน้าเว็บเพื่อดูผล' : '❌ ' + (r.error || 'บันทึกไม่สำเร็จ'));
+        },
+        async uploadNews() {
+          if (!this.news.title || !this.news.file) return;
+          this.busy = true;
+          try {
+            const base64 = await new Promise((resolve, reject) => {
+              const fr = new FileReader(); fr.onload = () => resolve(String(fr.result).split(',')[1]); fr.onerror = reject; fr.readAsDataURL(this.news.file);
+            });
+            const r = await this.api('uploadPostImage', { base64, mimeType: this.news.file.type || 'image/jpeg', fileName: this.news.file.name, title: this.news.title, category: this.news.category, body: this.news.body, author: this.news.author });
+            this.notify(!!r.ok, r.ok ? '✅ เพิ่มข่าวพร้อมรูปแล้ว' : '❌ ' + (r.error || 'เพิ่มข่าวไม่สำเร็จ'));
+            if (r.ok) this.news = { title: '', category: 'ข่าวสาร', body: '', author: '', file: null };
+          } catch (e) { this.notify(false, '❌ อ่านไฟล์ไม่สำเร็จ: ' + e.message); }
+          this.busy = false;
         },
       };
     }
