@@ -161,7 +161,7 @@
             </div>
             <figcaption class="p-4 flex items-center gap-2 flex-wrap">
               <p class="font-semibold rt-navy-text flex-1 min-w-[8rem]" x-text="im.title || 'ตารางสอบ'"></p>
-              <span class="text-xs rt-navy-soft rt-navy-text rounded-full px-2.5 py-1 font-medium" x-text="((im.term || '') + ' ' + (im.year || '')).trim()"></span>
+              <span class="text-xs rt-navy-soft rt-navy-text rounded-full px-2.5 py-1 font-medium" x-text="((im.level ? im.level + ' · ' : '') + (im.term || '') + ' ' + (im.year || '')).trim()"></span>
               <span class="text-xs rt-muted-text" x-text="rtThaiDate(im.date)"></span>
             </figcaption>
           </figure>

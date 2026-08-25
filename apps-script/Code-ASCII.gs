@@ -56,6 +56,7 @@ const RT_SHEET_DEFS = [
       { th: '\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e23\u0e39\u0e1b\u0e20\u0e32\u0e1e', key: 'image' },
       { th: '\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e40\u0e1c\u0e22\u0e41\u0e1e\u0e23\u0e48', key: 'date', isDate: true },
       { th: '\u0e1c\u0e39\u0e49\u0e2d\u0e31\u0e1e\u0e42\u0e2b\u0e25\u0e14', key: 'author' },
+      { th: '\u0e0a\u0e31\u0e49\u0e19\u0e1b\u0e35', key: 'level', list: ['\u0e1b\u0e35 1', '\u0e1b\u0e35 2', '\u0e1b\u0e35 3', '\u0e1b\u0e35 4'] },
     ],
     samples: [],
   },
@@ -86,6 +87,7 @@ const RT_SHEET_DEFS = [
     ],
     samples: [
       ['siteName', '\u0e2a\u0e32\u0e02\u0e32\u0e27\u0e34\u0e0a\u0e32\u0e23\u0e31\u0e07\u0e2a\u0e35\u0e40\u0e17\u0e04\u0e19\u0e34\u0e04'],
+      ['logoUrl', ''],
       ['siteFullName', '\u0e2a\u0e32\u0e02\u0e32\u0e27\u0e34\u0e0a\u0e32\u0e40\u0e17\u0e04\u0e19\u0e34\u0e04\u0e01\u0e32\u0e23\u0e41\u0e1e\u0e17\u0e22\u0e4c\u0e23\u0e31\u0e07\u0e2a\u0e35 \u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e40\u0e17\u0e04\u0e42\u0e19\u0e42\u0e25\u0e22\u0e35\u0e17\u0e32\u0e07\u0e01\u0e32\u0e23\u0e41\u0e1e\u0e17\u0e22\u0e4c\u0e41\u0e25\u0e30\u0e2a\u0e32\u0e18\u0e32\u0e23\u0e13\u0e2a\u0e38\u0e02 \u0e01\u0e32\u0e0d\u0e08\u0e19\u0e32\u0e20\u0e34\u0e40\u0e29\u0e01 (\u0e27\u0e17\u0e01.)'],
       ['currentYear', '2569'],
       ['currentTerm', '\u0e20\u0e32\u0e04\u0e40\u0e23\u0e35\u0e22\u0e19\u0e17\u0e35\u0e48 1'],
@@ -237,6 +239,7 @@ function doPost(e) {
         try {
           file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         } catch (shErr) {
+
         }
         const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
 
@@ -252,7 +255,7 @@ function doPost(e) {
           String(body.author || '\u0e41\u0e2d\u0e14\u0e21\u0e34\u0e19'),
           String(body.level || ''),
         ]);
-        return jsonOut({ ok: true, url: url, fileId: file.getId(), shareWarning: '\u0e44\u0e1f\u0e25\u0e4c\u0e2d\u0e31\u0e1b\u0e42\u0e2bลดแล้ว แต่ตั้งค่าลิงก์สาธารณะไม่สำเร็จ' });
+        return jsonOut({ ok: true, url: url, fileId: file.getId(), shareWarning: '\u0e44\u0e1f\u0e25\u0e4c\u0e2d\u0e31\u0e1b\u0e42\u0e2b\u0e25\u0e14\u0e41\u0e25\u0e49\u0e27 \u0e41\u0e15\u0e48\u0e15\u0e31\u0e49\u0e07\u0e04\u0e48\u0e32\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e2a\u0e32\u0e18\u0e32\u0e23\u0e13\u0e30\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08' });
       }
 
       case 'deleteImage': {
@@ -268,7 +271,7 @@ function doPost(e) {
             removed = true;
           }
         }
-        const m = url.match(/[?&]id=([\w-]{15,})/);
+        const m = url.match(/[\?&]id=([\w-]{15,})/) || url.match(/\/d\/([\w-]{15,})/);
         if (m) { try { DriveApp.getFileById(m[1]).setTrashed(true); } catch (dErr) {} }
         return jsonOut({ ok: removed, error: removed ? '' : '\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e23\u0e39\u0e1b\u0e19\u0e35\u0e49\u0e43\u0e19\u0e0a\u0e35\u0e15' });
       }
@@ -298,6 +301,50 @@ function doPost(e) {
         });
         sheet.getRange(sheet.getLastRow() + 1, 1, norm.length, def.headers.length).setValues(norm);
         return jsonOut({ ok: true, added: norm.length });
+      }
+
+      case 'saveConfig': {
+        const sheet = ss.getSheetByName('Config');
+        if (!sheet) return jsonOut({ ok: false, error: '\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e41\u0e17\u0e47\u0e1a Config \u2014 \u0e23\u0e31\u0e19 setupSheets \u0e01\u0e48\u0e2d\u0e19' });
+        const values = body.values || {};
+        Object.keys(values).forEach(function (key) {
+          const rows = sheet.getDataRange().getValues();
+          let found = false;
+          for (let i = 1; i < rows.length; i++) {
+            if (String(rows[i][0]) === key) { sheet.getRange(i + 1, 2).setValue(String(values[key] || '')); found = true; break; }
+          }
+          if (!found) sheet.appendRow([key, String(values[key] || '')]);
+        });
+        clearCache();
+        return jsonOut({ ok: true });
+      }
+
+      case 'uploadPostImage': {
+        const folder = getUploadFolder_();
+        const blob = Utilities.newBlob(Utilities.base64Decode(String(body.base64 || '')), String(body.mimeType || 'image/jpeg'), String(body.fileName || ('news-' + Date.now() + '.jpg')));
+        const file = folder.createFile(blob);
+        try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (shareErr) {}
+        const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w1600';
+        const sheet = ss.getSheetByName('Posts');
+        if (!sheet) return jsonOut({ ok: false, error: '\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e41\u0e17\u0e47\u0e1a Posts \u2014 \u0e23\u0e31\u0e19 setupSheets \u0e01\u0e48\u0e2d\u0e19' });
+        sheet.appendRow([String(body.id || ('P' + Date.now())), String(body.title || ''), String(body.category || '\u0e02\u0e48\u0e32\u0e27\u0e2a\u0e32\u0e23'), String(body.body || ''), url, String(body.link || ''), String(body.author || '\u0e41\u0e2d\u0e14\u0e21\u0e34\u0e19'), new Date(), String(body.pinned || 'FALSE')]);
+        clearCache();
+        return jsonOut({ ok: true, url: url, fileId: file.getId() });
+      }
+
+      case 'uploadSiteLogo': {
+        const folder = getUploadFolder_();
+        const blob = Utilities.newBlob(Utilities.base64Decode(String(body.base64 || '')), String(body.mimeType || 'image/png'), String(body.fileName || ('logo-' + Date.now() + '.png')));
+        const file = folder.createFile(blob);
+        try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (shareErr) {}
+        const url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w400';
+        const sheet = ss.getSheetByName('Config');
+        const rows = sheet.getDataRange().getValues();
+        let found = false;
+        for (let i = 1; i < rows.length; i++) if (String(rows[i][0]) === 'logoUrl') { sheet.getRange(i + 1, 2).setValue(url); found = true; break; }
+        if (!found) sheet.appendRow(['logoUrl', url]);
+        clearCache();
+        return jsonOut({ ok: true, url: url });
       }
 
       default:
